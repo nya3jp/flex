@@ -1,0 +1,19 @@
+FROM golang:1.12 as builder
+
+WORKDIR /build
+
+# Install dependencies first for caching.
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Build a static binary.
+COPY . ./
+RUN CGO_ENABLED=0 go install github.com/nya3jp/flex/cmd/flexlet
+
+FROM alpine
+
+WORKDIR /app
+COPY --from=builder /go/bin/flexlet ./
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+RUN mkdir -p -m 700 /work
+CMD /app/flexlet
