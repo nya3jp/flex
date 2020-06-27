@@ -12,28 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flexlet
+package flex
 
-import (
-	"time"
-)
-
-type Task struct {
-	Cmd          string        `json:"cmd"`
-	Pkgs         []*Pkg        `json:"pkgs"`
-	Timeout      time.Duration `json:"timeout"`
-	ArtifactsURL string        `json:"artifactsUrl"`
-}
-
-type Pkg struct {
-	URL  string `json:"url"`
-	Dest string `json:"dest,omitempty"`
-}
-
-type TaskResult struct {
-	Task     Task      `json:"task"`
-	Started  time.Time `json:"started,omitempty"`
-	Finished time.Time `json:"finished,omitempty"`
-	Code     int       `json:"code"`
-	Error    string    `json:"error,omitempty"`
-}
+//go:generate protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative flex.proto
