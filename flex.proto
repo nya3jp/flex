@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package flex;
 
-option go_package = "github.com/nya3jp/flex/internal/flex";
+option go_package = "github.com/nya3jp/flex";
 
 import "google/protobuf/duration.proto";
 
@@ -29,18 +29,28 @@ message RunTaskRequest {
 }
 
 message Task {
-  TaskCommand command = 1;
-  TaskOutput output = 2;
-  repeated TaskPackage packages = 3;
-  TaskLimits limits = 4;
+  TaskId id = 1;
+  TaskConstraints constraints = 2;
+  TaskCommand command = 3;
+  TaskOutputs outputs = 4;
+  repeated TaskPackage packages = 5;
+  TaskLimits limits = 6;
+}
+
+message TaskId {
+  string id = 1;
+}
+
+message TaskConstraints {
+  int32 priority = 1;
 }
 
 message TaskCommand {
   string shell = 1;
 }
 
-message TaskOutput {
-  string url = 1;
+message TaskOutputs {
+  string base_url = 1;
 }
 
 message TaskPackage {

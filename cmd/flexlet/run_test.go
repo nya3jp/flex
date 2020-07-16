@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flex
+package main
 
 import (
 	"archive/tar"
@@ -29,11 +29,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/api/option"
 
-	"github.com/nya3jp/flex/internal/unifs"
+	"github.com/nya3jp/flex"
 )
 
 func TestRunTask(t *testing.T) {
-	fs := unifs.New(context.Background(), option.WithoutAuthentication())
+	fs := newUniFS(context.Background(), option.WithoutAuthentication())
 
 	for _, tc := range []struct {
 		cmd        string
@@ -53,36 +53,36 @@ func TestRunTask(t *testing.T) {
 			}
 			defer os.RemoveAll(td)
 
-			task := &Task{
-				Command: &TaskCommand{Shell: tc.cmd},
-				Output:  &TaskOutput{Url: filepath.Join(td, "out")},
-				Limits:  &TaskLimits{},
+			task := &flex.Task{
+				Command: &flex.TaskCommand{Shell: tc.cmd},
+				Outputs: &flex.TaskOutputs{BaseUrl: filepath.Join(td, "out")},
+				Limits:  &flex.TaskLimits{},
 			}
 			if tc.timeLimit {
 				task.Limits.Time = ptypes.DurationProto(time.Nanosecond)
 			}
-			options := &RunTaskOptions{
+			options := &runTaskOptions{
 				TaskDir:  filepath.Join(td, "task"),
 				CacheDir: filepath.Join(td, "cache"),
 				FS:       fs,
 			}
 
-			status, err := RunTask(context.Background(), task, options)
+			status, err := runTask(context.Background(), task, options)
 			if !tc.wantErr && err != nil {
-				t.Fatalf("RunTask failed: %v", err)
+				t.Fatalf("runTask failed: %v", err)
 			}
 			if tc.wantErr && err == nil {
-				t.Fatal("RunTask succeeded unexpectedly")
+				t.Fatal("runTask succeeded unexpectedly")
 			}
 			if err == nil && status != tc.wantStatus {
-				t.Fatalf("RunTask returned %d, want %d", status, tc.wantStatus)
+				t.Fatalf("runTask returned %d, want %d", status, tc.wantStatus)
 			}
 		})
 	}
 }
 
 func TestRunTaskEnv(t *testing.T) {
-	fs := unifs.New(context.Background(), option.WithoutAuthentication())
+	fs := newUniFS(context.Background(), option.WithoutAuthentication())
 
 	td, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -92,22 +92,22 @@ func TestRunTaskEnv(t *testing.T) {
 
 	outDir := filepath.Join(td, "out")
 	taskDir := filepath.Join(td, "task")
-	task := &Task{
-		Command: &TaskCommand{Shell: `echo "$OUT_DIR"`},
-		Output:  &TaskOutput{Url: outDir},
+	task := &flex.Task{
+		Command: &flex.TaskCommand{Shell: `echo "$OUT_DIR"`},
+		Outputs: &flex.TaskOutputs{BaseUrl: outDir},
 	}
-	options := &RunTaskOptions{
+	options := &runTaskOptions{
 		TaskDir:  taskDir,
 		CacheDir: filepath.Join(td, "cache"),
 		FS:       fs,
 	}
 
-	status, err := RunTask(context.Background(), task, options)
+	status, err := runTask(context.Background(), task, options)
 	if err != nil {
-		t.Fatalf("RunTask failed: %v", err)
+		t.Fatalf("runTask failed: %v", err)
 	}
 	if status != 0 {
-		t.Fatalf("RunTask returned %d, want 0", status)
+		t.Fatalf("runTask returned %d, want 0", status)
 	}
 
 	b, err := ioutil.ReadFile(filepath.Join(outDir, "stdout.txt"))
@@ -161,7 +161,7 @@ func writeTar(t *testing.T, name string, files []string) {
 }
 
 func TestRunTaskPackaging(t *testing.T) {
-	fs := unifs.New(context.Background(), option.WithoutAuthentication())
+	fs := newUniFS(context.Background(), option.WithoutAuthentication())
 
 	td, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -175,26 +175,26 @@ func TestRunTaskPackaging(t *testing.T) {
 	writeTar(t, pkg2, []string{"file3", "dir1/file4"})
 
 	outDir := filepath.Join(td, "out")
-	task := &Task{
-		Command: &TaskCommand{Shell: "find -s ."},
-		Output:  &TaskOutput{Url: outDir},
-		Packages: []*TaskPackage{
+	task := &flex.Task{
+		Command: &flex.TaskCommand{Shell: "find -s ."},
+		Outputs: &flex.TaskOutputs{BaseUrl: outDir},
+		Packages: []*flex.TaskPackage{
 			{Url: pkg1, InstallPath: "dir1"},
 			{Url: pkg2, InstallPath: ""},
 		},
 	}
-	options := &RunTaskOptions{
+	options := &runTaskOptions{
 		TaskDir:  filepath.Join(td, "task"),
 		CacheDir: filepath.Join(td, "cache"),
 		FS:       fs,
 	}
 
-	status, err := RunTask(context.Background(), task, options)
+	status, err := runTask(context.Background(), task, options)
 	if err != nil {
-		t.Fatalf("RunTask failed: %v", err)
+		t.Fatalf("runTask failed: %v", err)
 	}
 	if status != 0 {
-		t.Fatalf("RunTask returned %d, want 0", status)
+		t.Fatalf("runTask returned %d, want 0", status)
 	}
 
 	b, err := ioutil.ReadFile(filepath.Join(outDir, "stdout.txt"))

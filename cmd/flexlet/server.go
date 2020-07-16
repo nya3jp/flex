@@ -16,65 +16,28 @@ package main
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 
 	"golang.org/x/sys/unix"
-	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
-	"github.com/nya3jp/flex/internal/flex"
-	"github.com/nya3jp/flex/internal/unifs"
+	"github.com/nya3jp/flex"
 )
-
-type args struct {
-	Port    int
-	Options *flex.RunTaskOptions
-}
-
-func parseArgs() (*args, error) {
-	args := args{Options: &flex.RunTaskOptions{}}
-	var storeDir string
-	var credsPath string
-	fs := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	fs.IntVar(&args.Port, "port", 2800, "Port to listen")
-	fs.StringVar(&storeDir, "storedir", "", "Storage directory path")
-	fs.StringVar(&credsPath, "creds", "", "Credentials JSON path")
-
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		return nil, err
-	}
-
-	if storeDir == "" {
-		return nil, errors.New("-storedir is required")
-	}
-	args.Options.TaskDir = filepath.Join(storeDir, "task")
-	args.Options.CacheDir = filepath.Join(storeDir, "cache")
-
-	var opts []option.ClientOption
-	if credsPath != "" {
-		opts = append(opts, option.WithCredentialsFile(credsPath))
-	}
-	args.Options.FS = unifs.New(context.Background(), opts...)
-	return &args, nil
-}
 
 type server struct {
 	flex.UnimplementedFlexletServer
-	opts *flex.RunTaskOptions
+	opts *runTaskOptions
 	lock chan struct{}
 }
 
-func newServer(opts *flex.RunTaskOptions) *server {
+func newServer(opts *runTaskOptions) *server {
 	lock := make(chan struct{}, 1)
 	lock <- struct{}{}
 	return &server{
@@ -92,7 +55,7 @@ func (s *server) RunTask(ctx context.Context, req *flex.RunTaskRequest) (*flex.R
 	defer func() { s.lock <- struct{}{} }()
 
 	var result flex.TaskResult
-	code, err := flex.RunTask(ctx, req.GetTask(), s.opts)
+	code, err := runTask(ctx, req.GetTask(), s.opts)
 	if err != nil {
 		result.Status = &flex.TaskResult_Error{Error: err.Error()}
 	} else {
@@ -101,13 +64,13 @@ func (s *server) RunTask(ctx context.Context, req *flex.RunTaskRequest) (*flex.R
 	return &flex.RunTaskResponse{Result: &result}, nil
 }
 
-func runServer(args *args) error {
+func runServer(port int, options *runTaskOptions) error {
 	srv := grpc.NewServer()
 
-	flex.RegisterFlexletServer(srv, newServer(args.Options))
+	flex.RegisterFlexletServer(srv, newServer(options))
 	reflection.Register(srv)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", args.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return err
 	}
@@ -122,16 +85,4 @@ func runServer(args *args) error {
 
 	log.Printf("Started listening at %v", lis.Addr())
 	return srv.Serve(lis)
-}
-
-func main() {
-	if err := func() error {
-		args, err := parseArgs()
-		if err != nil {
-			return err
-		}
-		return runServer(args)
-	}(); err != nil {
-		log.Fatalf("ERROR: %v", err)
-	}
 }

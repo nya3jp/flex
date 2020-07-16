@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package unifs
+package main
 
 import (
 	"compress/gzip"
@@ -29,36 +29,36 @@ import (
 	"google.golang.org/api/option"
 )
 
-type UniFS struct {
+type uniFS struct {
 	client func() (*storage.Client, error)
 }
 
-func New(ctx context.Context, opts ...option.ClientOption) *UniFS {
-	return &UniFS{client: newLazyStorageClient(ctx, opts...)}
+func newUniFS(ctx context.Context, opts ...option.ClientOption) *uniFS {
+	return &uniFS{client: newLazyStorageClient(ctx, opts...)}
 }
 
-type Reader struct {
+type uniFSReader struct {
 	r io.ReadCloser
 }
 
-func (r *Reader) Read(p []byte) (n int, err error) {
+func (r *uniFSReader) Read(p []byte) (n int, err error) {
 	return r.r.Read(p)
 }
 
-func (r *Reader) Close() error {
+func (r *uniFSReader) Close() error {
 	return r.r.Close()
 }
 
-var _ io.ReadCloser = &Reader{}
+var _ io.ReadCloser = &uniFSReader{}
 
-func (fs *UniFS) OpenForRead(ctx context.Context, url string) (*Reader, error) {
+func (fs *uniFS) OpenForRead(ctx context.Context, url string) (*uniFSReader, error) {
 	bucket, path, err := parseGSURL(url)
 	if err != nil {
 		r, err := os.Open(url)
 		if err != nil {
 			return nil, err
 		}
-		return &Reader{r}, nil
+		return &uniFSReader{r}, nil
 	}
 
 	cl, err := fs.client()
@@ -69,24 +69,24 @@ func (fs *UniFS) OpenForRead(ctx context.Context, url string) (*Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Reader{r}, nil
+	return &uniFSReader{r}, nil
 }
 
-type Writer struct {
+type uniFSWriter struct {
 	w io.WriteCloser
 }
 
-func (w *Writer) Write(p []byte) (n int, err error) {
+func (w *uniFSWriter) Write(p []byte) (n int, err error) {
 	return w.w.Write(p)
 }
 
-func (w *Writer) Close() error {
+func (w *uniFSWriter) Close() error {
 	return w.w.Close()
 }
 
-var _ io.WriteCloser = &Writer{}
+var _ io.WriteCloser = &uniFSWriter{}
 
-func (fs *UniFS) OpenForWrite(ctx context.Context, url string) (*Writer, error) {
+func (fs *uniFS) OpenForWrite(ctx context.Context, url string) (*uniFSWriter, error) {
 	bucket, path, err := parseGSURL(url)
 	if err != nil {
 		if err := os.MkdirAll(filepath.Dir(url), 0700); err != nil {
@@ -97,7 +97,7 @@ func (fs *UniFS) OpenForWrite(ctx context.Context, url string) (*Writer, error) 
 		if err != nil {
 			return nil, err
 		}
-		return &Writer{w}, nil
+		return &uniFSWriter{w}, nil
 	}
 
 	cl, err := fs.client()
@@ -108,7 +108,7 @@ func (fs *UniFS) OpenForWrite(ctx context.Context, url string) (*Writer, error) 
 	// TODO: Auto-detect MIME type.
 	w.ContentType = "application/octet-stream"
 	w.ContentEncoding = "gzip"
-	return &Writer{newGzipWrapper(w)}, nil
+	return &uniFSWriter{newGzipWrapper(w)}, nil
 }
 
 type gzipWrapper struct {
