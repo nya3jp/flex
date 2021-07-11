@@ -11,80 +11,118 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+// Requires gRPC-Go v1.32.0 or later.
+const _ = grpc.SupportPackageIsVersion7
 
-// FlexletClient is the client API for Flexlet service.
+// WorkerClient is the client API for Worker service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type FlexletClient interface {
-	RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error)
+type WorkerClient interface {
+	RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (Worker_RunTaskClient, error)
 }
 
-type flexletClient struct {
+type workerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewFlexletClient(cc grpc.ClientConnInterface) FlexletClient {
-	return &flexletClient{cc}
+func NewWorkerClient(cc grpc.ClientConnInterface) WorkerClient {
+	return &workerClient{cc}
 }
 
-func (c *flexletClient) RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (*RunTaskResponse, error) {
-	out := new(RunTaskResponse)
-	err := c.cc.Invoke(ctx, "/flex.Flexlet/RunTask", in, out, opts...)
+func (c *workerClient) RunTask(ctx context.Context, in *RunTaskRequest, opts ...grpc.CallOption) (Worker_RunTaskClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Worker_ServiceDesc.Streams[0], "/flex.Worker/RunTask", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-// FlexletServer is the server API for Flexlet service.
-// All implementations must embed UnimplementedFlexletServer
-// for forward compatibility
-type FlexletServer interface {
-	RunTask(context.Context, *RunTaskRequest) (*RunTaskResponse, error)
-	mustEmbedUnimplementedFlexletServer()
-}
-
-// UnimplementedFlexletServer must be embedded to have forward compatible implementations.
-type UnimplementedFlexletServer struct {
-}
-
-func (*UnimplementedFlexletServer) RunTask(context.Context, *RunTaskRequest) (*RunTaskResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RunTask not implemented")
-}
-func (*UnimplementedFlexletServer) mustEmbedUnimplementedFlexletServer() {}
-
-func RegisterFlexletServer(s *grpc.Server, srv FlexletServer) {
-	s.RegisterService(&_Flexlet_serviceDesc, srv)
-}
-
-func _Flexlet_RunTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RunTaskRequest)
-	if err := dec(in); err != nil {
+	x := &workerRunTaskClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(FlexletServer).RunTask(ctx, in)
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
 	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/flex.Flexlet/RunTask",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FlexletServer).RunTask(ctx, req.(*RunTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return x, nil
 }
 
-var _Flexlet_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "flex.Flexlet",
-	HandlerType: (*FlexletServer)(nil),
-	Methods: []grpc.MethodDesc{
+type Worker_RunTaskClient interface {
+	Recv() (*RunTaskResponse, error)
+	grpc.ClientStream
+}
+
+type workerRunTaskClient struct {
+	grpc.ClientStream
+}
+
+func (x *workerRunTaskClient) Recv() (*RunTaskResponse, error) {
+	m := new(RunTaskResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// WorkerServer is the server API for Worker service.
+// All implementations must embed UnimplementedWorkerServer
+// for forward compatibility
+type WorkerServer interface {
+	RunTask(*RunTaskRequest, Worker_RunTaskServer) error
+	mustEmbedUnimplementedWorkerServer()
+}
+
+// UnimplementedWorkerServer must be embedded to have forward compatible implementations.
+type UnimplementedWorkerServer struct {
+}
+
+func (UnimplementedWorkerServer) RunTask(*RunTaskRequest, Worker_RunTaskServer) error {
+	return status.Errorf(codes.Unimplemented, "method RunTask not implemented")
+}
+func (UnimplementedWorkerServer) mustEmbedUnimplementedWorkerServer() {}
+
+// UnsafeWorkerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkerServer will
+// result in compilation errors.
+type UnsafeWorkerServer interface {
+	mustEmbedUnimplementedWorkerServer()
+}
+
+func RegisterWorkerServer(s grpc.ServiceRegistrar, srv WorkerServer) {
+	s.RegisterService(&Worker_ServiceDesc, srv)
+}
+
+func _Worker_RunTask_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RunTaskRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WorkerServer).RunTask(m, &workerRunTaskServer{stream})
+}
+
+type Worker_RunTaskServer interface {
+	Send(*RunTaskResponse) error
+	grpc.ServerStream
+}
+
+type workerRunTaskServer struct {
+	grpc.ServerStream
+}
+
+func (x *workerRunTaskServer) Send(m *RunTaskResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// Worker_ServiceDesc is the grpc.ServiceDesc for Worker service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Worker_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "flex.Worker",
+	HandlerType: (*WorkerServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "RunTask",
-			Handler:    _Flexlet_RunTask_Handler,
+			StreamName:    "RunTask",
+			Handler:       _Worker_RunTask_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "flex.proto",
 }

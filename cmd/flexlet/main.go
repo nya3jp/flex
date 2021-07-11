@@ -15,46 +15,63 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
+	"sync"
 
-	"google.golang.org/api/option"
+	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/cmd/flexlet/internal/worker"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type args struct {
-	port    int
-	options *runTaskOptions
+	Workers int
+	HubAddr string
+	Options worker.Options
 }
 
 func parseArgs() (*args, error) {
-	args := args{options: &runTaskOptions{}}
-	var storeDir string
-	var credsPath string
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	args := &args{}
 	fs := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	fs.IntVar(&args.port, "port", 2800, "Port to listen")
-	fs.StringVar(&storeDir, "storedir", "", "Storage directory path")
-	fs.StringVar(&credsPath, "creds", "", "Credentials JSON path")
+	fs.IntVar(&args.Workers, "workers", 0, "Number of workers")
+	fs.StringVar(&args.HubAddr, "hub", "", "Flexhub address")
+	fs.StringVar(&args.Options.RootDir, "storedir", filepath.Join(homeDir, ".cache/flexlet"), "Storage directory path")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		return nil, err
 	}
 
-	if storeDir == "" {
-		return nil, errors.New("-storedir is required")
+	if args.HubAddr == "" {
+		return nil, errors.New("-hub is required")
 	}
-	args.options.TaskDir = filepath.Join(storeDir, "task")
-	args.options.CacheDir = filepath.Join(storeDir, "cache")
+	if args.Workers <= 0 {
+		return nil, errors.New("-workers is required")
+	}
+	return args, nil
+}
 
-	var opts []option.ClientOption
-	if credsPath != "" {
-		opts = append(opts, option.WithCredentialsFile(credsPath))
+func runWorker(hubAddr string, options *worker.Options) error {
+	conn, err := net.Dial("tcp", hubAddr)
+	if err != nil {
+		return err
 	}
-	args.options.FS = newUniFS(context.Background(), opts...)
-	return &args, nil
+	defer conn.Close()
+
+	srv := grpc.NewServer()
+	flex.RegisterWorkerServer(srv, worker.New(options))
+	reflection.Register(srv)
+
+	return srv.Serve(newFixedListener(conn))
 }
 
 func main() {
@@ -63,7 +80,19 @@ func main() {
 		if err != nil {
 			return err
 		}
-		return runServer(args.port, args.options)
+
+		var wg sync.WaitGroup
+		wg.Add(args.Workers)
+		for i := 0; i < args.Workers; i++ {
+			go func(i int) {
+				defer wg.Done()
+				if err := runWorker(args.HubAddr, &args.Options); err != nil {
+					log.Printf("Worker %d failed: %v", i, err)
+				}
+			}(i)
+		}
+		wg.Wait()
+		return nil
 	}(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}

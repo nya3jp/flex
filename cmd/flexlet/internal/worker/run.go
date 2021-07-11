@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package worker
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,18 +34,16 @@ import (
 	"github.com/nya3jp/flex"
 )
 
-type runTaskOptions struct {
-	TaskDir  string
-	CacheDir string
-	FS       *uniFS
-}
-
-func runTask(ctx context.Context, task *flex.Task, opts *runTaskOptions) (code int, err error) {
-	if err := os.MkdirAll(opts.TaskDir, 0700); err != nil {
-		return -1, err
+func runTask(ctx context.Context, task *flex.Task, rootDir string, stdout, stderr io.Writer) (code int, err error) {
+	tasksDir := filepath.Join(rootDir, "tasks")
+	cacheDir := filepath.Join(rootDir, "cache")
+	for _, dir := range []string{tasksDir, cacheDir} {
+		if err := os.Mkdir(dir, 0700); err != nil {
+			return -1, err
+		}
 	}
 
-	taskDir, err := ioutil.TempDir(opts.TaskDir, "")
+	taskDir, err := ioutil.TempDir(tasksDir, "")
 	if err != nil {
 		return -1, err
 	}
@@ -58,22 +57,18 @@ func runTask(ctx context.Context, task *flex.Task, opts *runTaskOptions) (code i
 		}
 	}
 
-	if err := prepareTask(ctx, opts.FS, execDir, opts.CacheDir, task.GetPackages()); err != nil {
+	if err := prepareTask(ctx, execDir, cacheDir, task.GetPackages()); err != nil {
 		return -1, fmt.Errorf("failed to prepare task: %v", err)
 	}
 
-	code, err = execCmd(ctx, outDir, execDir, task.GetCommand(), task.GetLimits())
+	code, err = execCmd(ctx, outDir, execDir, task.GetCommand(), stdout, stderr, task.GetLimits())
 	if err != nil {
 		return -1, fmt.Errorf("task execution failed: %v", err)
-	}
-
-	if err := uploadArtifacts(ctx, opts.FS, task.GetOutputs().GetBaseUrl(), outDir); err != nil {
-		return -1, fmt.Errorf("failed to upload artifacts: %v", err)
 	}
 	return code, nil
 }
 
-func prepareTask(ctx context.Context, fs *uniFS, execDir, cacheDir string, pkgs []*flex.TaskPackage) error {
+func prepareTask(ctx context.Context, execDir, cacheDir string, pkgs []*flex.TaskPackage) error {
 	pkgCacheDir := filepath.Join(cacheDir, "pkgs")
 	if err := os.MkdirAll(pkgCacheDir, 0700); err != nil {
 		return err
@@ -93,7 +88,7 @@ func prepareTask(ctx context.Context, fs *uniFS, execDir, cacheDir string, pkgs 
 		for i, pkg := range pkgs {
 			i, pkg := i, pkg
 			eg.Go(func() error {
-				f, err := downloadPkg(ctx, fs, pkg.GetUrl(), pkgCacheDir)
+				f, err := downloadPkg(ctx, pkg.GetUrl(), pkgCacheDir)
 				if err != nil {
 					return fmt.Errorf("failed to download %s: %v", pkg.GetUrl(), err)
 				}
@@ -114,7 +109,7 @@ func prepareTask(ctx context.Context, fs *uniFS, execDir, cacheDir string, pkgs 
 	return nil
 }
 
-func downloadPkg(ctx context.Context, fs *uniFS, url, pkgCacheDir string) (*os.File, error) {
+func downloadPkg(ctx context.Context, url, pkgCacheDir string) (*os.File, error) {
 	cachePath := filepath.Join(pkgCacheDir, sha256sum(url))
 
 	f, err := os.OpenFile(cachePath, os.O_RDWR|os.O_CREATE, 0600)
@@ -159,17 +154,22 @@ func downloadPkg(ctx context.Context, fs *uniFS, url, pkgCacheDir string) (*os.F
 		return dupFile()
 	}
 
-	r, err := fs.OpenForRead(ctx, url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer r.Close()
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
 
 	w, err := dupFile()
 	if err != nil {
 		return nil, err
 	}
-	_, werr := io.Copy(w, r)
+	_, werr := io.Copy(w, res.Body)
 	if err := w.Close(); err != nil && werr == nil {
 		werr = err
 	}
@@ -187,7 +187,7 @@ func installPkg(ctx context.Context, destDir string, f *os.File) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "tar", "x", "-z", "-C", destDir)
+	cmd := exec.CommandContext(ctx, "tar", "xz", "-C", destDir)
 	cmd.Stdin = f
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -197,19 +197,7 @@ func installPkg(ctx context.Context, destDir string, f *os.File) error {
 	return nil
 }
 
-func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.TaskCommand, limits *flex.TaskLimits) (code int, err error) {
-	stdout, err := os.Create(filepath.Join(outDir, "stdout.txt"))
-	if err != nil {
-		return 0, err
-	}
-	defer stdout.Close()
-
-	stderr, err := os.Create(filepath.Join(outDir, "stderr.txt"))
-	if err != nil {
-		return 0, err
-	}
-	defer stderr.Close()
-
+func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.TaskCommand, stdout, stderr io.Writer, limits *flex.TaskLimits) (code int, err error) {
 	if tlp := limits.GetTime(); tlp != nil {
 		tl, err := ptypes.Duration(tlp)
 		if err != nil {
@@ -236,65 +224,6 @@ func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.TaskCommand,
 		return 0, err
 	}
 	return 0, nil
-}
-
-func uploadArtifacts(ctx context.Context, fs *uniFS, outURL, outDir string) error {
-	var paths []string
-	if err := filepath.Walk(outDir, func(absPath string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !fi.Mode().IsRegular() {
-			return nil
-		}
-		path := strings.TrimLeft(strings.TrimPrefix(absPath, outDir), "/")
-		paths = append(paths, path)
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, path := range paths {
-		path := path
-		eg.Go(func() error {
-			src := filepath.Join(outDir, path)
-			dst := outURL
-			if !strings.HasSuffix(dst, "/") {
-				dst += "/"
-			}
-			dst += path
-			return uploadArtifact(ctx, fs, src, dst)
-		})
-	}
-	return eg.Wait()
-}
-
-func uploadArtifact(ctx context.Context, fs *uniFS, src, dst string) (retErr error) {
-	f, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	w, err := fs.OpenForWrite(ctx, dst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := w.Close(); err != nil && retErr == nil {
-			retErr = err
-		}
-	}()
-
-	if _, err := io.Copy(w, f); err != nil {
-		cancel()
-		return err
-	}
-	return nil
 }
 
 func sha256sum(data string) string {

@@ -12,29 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package worker
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/api/option"
-
 	"github.com/nya3jp/flex"
 )
 
 func TestRunTask(t *testing.T) {
-	fs := newUniFS(context.Background(), option.WithoutAuthentication())
-
 	for _, tc := range []struct {
 		cmd        string
 		timeLimit  bool
@@ -47,27 +46,21 @@ func TestRunTask(t *testing.T) {
 		{cmd: "sleep 60", timeLimit: true, wantErr: true},
 	} {
 		t.Run(tc.cmd, func(t *testing.T) {
-			td, err := ioutil.TempDir("", "")
+			rootDir, err := ioutil.TempDir("", "")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer os.RemoveAll(td)
+			defer os.RemoveAll(rootDir)
 
 			task := &flex.Task{
 				Command: &flex.TaskCommand{Shell: tc.cmd},
-				Outputs: &flex.TaskOutputs{BaseUrl: filepath.Join(td, "out")},
 				Limits:  &flex.TaskLimits{},
 			}
 			if tc.timeLimit {
 				task.Limits.Time = ptypes.DurationProto(time.Nanosecond)
 			}
-			options := &runTaskOptions{
-				TaskDir:  filepath.Join(td, "task"),
-				CacheDir: filepath.Join(td, "cache"),
-				FS:       fs,
-			}
 
-			status, err := runTask(context.Background(), task, options)
+			status, err := runTask(context.Background(), task, rootDir, io.Discard, io.Discard)
 			if !tc.wantErr && err != nil {
 				t.Fatalf("runTask failed: %v", err)
 			}
@@ -81,28 +74,19 @@ func TestRunTask(t *testing.T) {
 	}
 }
 
-func TestRunTaskEnv(t *testing.T) {
-	fs := newUniFS(context.Background(), option.WithoutAuthentication())
-
-	td, err := ioutil.TempDir("", "")
+func TestRunTask_Stdio(t *testing.T) {
+	rootDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(td)
+	defer os.RemoveAll(rootDir)
 
-	outDir := filepath.Join(td, "out")
-	taskDir := filepath.Join(td, "task")
 	task := &flex.Task{
-		Command: &flex.TaskCommand{Shell: `echo "$OUT_DIR"`},
-		Outputs: &flex.TaskOutputs{BaseUrl: outDir},
-	}
-	options := &runTaskOptions{
-		TaskDir:  taskDir,
-		CacheDir: filepath.Join(td, "cache"),
-		FS:       fs,
+		Command: &flex.TaskCommand{Shell: `echo foo; echo bar >&2`},
 	}
 
-	status, err := runTask(context.Background(), task, options)
+	var stdout, stderr bytes.Buffer
+	status, err := runTask(context.Background(), task, rootDir, &stdout, &stderr)
 	if err != nil {
 		t.Fatalf("runTask failed: %v", err)
 	}
@@ -110,14 +94,11 @@ func TestRunTaskEnv(t *testing.T) {
 		t.Fatalf("runTask returned %d, want 0", status)
 	}
 
-	b, err := ioutil.ReadFile(filepath.Join(outDir, "stdout.txt"))
-	if err != nil {
-		t.Fatalf("ReadFile: %v", err)
+	if out := stdout.String(); out != "foo\n" {
+		t.Errorf("Unexpected stdout: got %q, want %q", out, "foo\n")
 	}
-	got := strings.TrimSpace(string(b))
-	// OUT_DIR should be somewhere under taskDir.
-	if !strings.HasPrefix(got, taskDir) {
-		t.Errorf("OUT_DIR=%q, want subdir of %q", got, taskDir)
+	if out := stderr.String(); out != "bar\n" {
+		t.Errorf("Unexpected stderr: got %q, want %q", out, "bar\n")
 	}
 }
 
@@ -160,36 +141,34 @@ func writeTar(t *testing.T, name string, files []string) {
 	}
 }
 
-func TestRunTaskPackaging(t *testing.T) {
-	fs := newUniFS(context.Background(), option.WithoutAuthentication())
-
-	td, err := ioutil.TempDir("", "")
+func TestRunTask_Packaging(t *testing.T) {
+	rootDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(td)
+	defer os.RemoveAll(rootDir)
 
-	pkg1 := filepath.Join(td, "pkg1.tar")
-	pkg2 := filepath.Join(td, "pkg2.tar")
-	writeTar(t, pkg1, []string{"file1", "dir2/file2"})
-	writeTar(t, pkg2, []string{"file3", "dir1/file4"})
+	webDir := filepath.Join(rootDir, "web")
+	if err := os.Mkdir(webDir, 0700); err != nil {
+		t.Fatal(err)
+	}
 
-	outDir := filepath.Join(td, "out")
+	writeTar(t, filepath.Join(webDir, "pkg1.tar"), []string{"file1", "dir2/file2"})
+	writeTar(t, filepath.Join(webDir, "pkg2.tar"), []string{"file3", "dir1/file4"})
+
+	server := httptest.NewServer(http.FileServer(http.Dir(webDir)))
+	defer server.Close()
+
 	task := &flex.Task{
 		Command: &flex.TaskCommand{Shell: "find -s ."},
-		Outputs: &flex.TaskOutputs{BaseUrl: outDir},
 		Packages: []*flex.TaskPackage{
-			{Url: pkg1, InstallPath: "dir1"},
-			{Url: pkg2, InstallPath: ""},
+			{Url: server.URL + "/pkg1.tar", InstallPath: "dir1"},
+			{Url: server.URL + "/pkg2.tar", InstallPath: ""},
 		},
 	}
-	options := &runTaskOptions{
-		TaskDir:  filepath.Join(td, "task"),
-		CacheDir: filepath.Join(td, "cache"),
-		FS:       fs,
-	}
 
-	status, err := runTask(context.Background(), task, options)
+	var stdout bytes.Buffer
+	status, err := runTask(context.Background(), task, rootDir, &stdout, io.Discard)
 	if err != nil {
 		t.Fatalf("runTask failed: %v", err)
 	}
@@ -197,12 +176,7 @@ func TestRunTaskPackaging(t *testing.T) {
 		t.Fatalf("runTask returned %d, want 0", status)
 	}
 
-	b, err := ioutil.ReadFile(filepath.Join(outDir, "stdout.txt"))
-	if err != nil {
-		t.Fatalf("ReadFile: %v", err)
-	}
-	got := string(b)
-	want := `.
+	const want = `.
 ./dir1
 ./dir1/dir2
 ./dir1/dir2/file2
@@ -210,7 +184,7 @@ func TestRunTaskPackaging(t *testing.T) {
 ./dir1/file4
 ./file3
 `
-	if diff := cmp.Diff(got, want); diff != "" {
+	if diff := cmp.Diff(stdout.String(), want); diff != "" {
 		t.Errorf("Files mismatch (-got +want):\n%s", diff)
 	}
 }
