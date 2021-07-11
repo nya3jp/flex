@@ -8,11 +8,12 @@ import (
 
 type watchedConn struct {
 	net.Conn
-	wg *sync.WaitGroup
+	once sync.Once
+	wg   *sync.WaitGroup
 }
 
 func (c *watchedConn) Close() error {
-	c.wg.Done()
+	c.once.Do(c.wg.Done)
 	return c.Conn.Close()
 }
 
@@ -48,7 +49,7 @@ func (l *fixedListener) Close() error {
 }
 
 func (l *fixedListener) Addr() net.Addr {
-	panic("not implemented")
+	return &net.IPAddr{}
 }
 
 var _ net.Listener = &fixedListener{}

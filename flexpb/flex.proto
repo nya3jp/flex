@@ -16,12 +16,61 @@ syntax = "proto3";
 
 package flex;
 
-option go_package = "github.com/nya3jp/flex";
+option go_package = "github.com/nya3jp/flex/flexpb";
 
 import "google/protobuf/duration.proto";
 
+message TaskStatus {
+  Task task = 1;
+  TaskState state = 2;
+  string worker = 3;
+}
+
+enum TaskState {
+  PENDING = 0;
+  RUNNING = 1;
+  FINISHED = 2;
+}
+
+message ListTasksRequest {
+  int64 count = 1;
+  int64 offset = 2;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+}
+
+message ListWorkersRequest {}
+
+message ListWorkersResponse {
+  repeated WorkerStatus workers = 1;
+}
+
+message WorkerStatus {
+  WorkerInfo info = 1;
+  WorkerState state = 2;
+  Task current_task = 3;
+}
+
+enum WorkerState {
+  DOWN = 0;
+  UP = 1;
+}
+
 service Worker {
+  rpc GetWorkerInfo(GetWorkerInfoRequest) returns (GetWorkerInfoResponse) {}
   rpc RunTask(RunTaskRequest) returns (stream RunTaskResponse) {}
+}
+
+message GetWorkerInfoRequest {}
+
+message GetWorkerInfoResponse {
+  WorkerInfo info = 1;
+}
+
+message WorkerInfo {
+  string name = 1;
 }
 
 message RunTaskRequest {
@@ -30,14 +79,18 @@ message RunTaskRequest {
 
 message Task {
   TaskId id = 1;
-  TaskConstraints constraints = 2;
-  TaskCommand command = 3;
-  repeated TaskPackage packages = 4;
-  TaskLimits limits = 5;
+  TaskSpec spec = 2;
+}
+
+message TaskSpec {
+  TaskCommand command = 1;
+  repeated TaskPackage packages = 2;
+  TaskLimits limits = 3;
+  TaskConstraints constraints = 4;
 }
 
 message TaskId {
-  string id = 1;
+  int64 id = 1;
 }
 
 message TaskConstraints {

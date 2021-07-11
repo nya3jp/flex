@@ -17,22 +17,25 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 
-	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/worker"
+	"github.com/nya3jp/flex/flexpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 type args struct {
+	Name    string
 	Workers int
 	HubAddr string
-	Options worker.Options
+	RootDir string
 }
 
 func parseArgs() (*args, error) {
@@ -43,14 +46,18 @@ func parseArgs() (*args, error) {
 
 	args := &args{}
 	fs := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	fs.IntVar(&args.Workers, "workers", 0, "Number of workers")
+	fs.StringVar(&args.Name, "name", "", "Flexlet name")
+	fs.IntVar(&args.Workers, "workers", runtime.NumCPU(), "Number of workers")
 	fs.StringVar(&args.HubAddr, "hub", "", "Flexhub address")
-	fs.StringVar(&args.Options.RootDir, "storedir", filepath.Join(homeDir, ".cache/flexlet"), "Storage directory path")
+	fs.StringVar(&args.RootDir, "storedir", filepath.Join(homeDir, ".cache/flexlet"), "Storage directory path")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		return nil, err
 	}
 
+	if args.Name == "" {
+		return nil, errors.New("-name is required")
+	}
 	if args.HubAddr == "" {
 		return nil, errors.New("-hub is required")
 	}
@@ -60,7 +67,7 @@ func parseArgs() (*args, error) {
 	return args, nil
 }
 
-func runWorker(hubAddr string, options *worker.Options) error {
+func runWorker(name, hubAddr, rootDir string) error {
 	conn, err := net.Dial("tcp", hubAddr)
 	if err != nil {
 		return err
@@ -68,7 +75,11 @@ func runWorker(hubAddr string, options *worker.Options) error {
 	defer conn.Close()
 
 	srv := grpc.NewServer()
-	flex.RegisterWorkerServer(srv, worker.New(options))
+	opts := &worker.Options{
+		Name:    name,
+		RootDir: rootDir,
+	}
+	flexpb.RegisterWorkerServer(srv, worker.New(opts))
 	reflection.Register(srv)
 
 	return srv.Serve(newFixedListener(conn))
@@ -81,13 +92,20 @@ func main() {
 			return err
 		}
 
+		if err := os.MkdirAll(args.RootDir, 0700); err != nil {
+			return err
+		}
+
+		log.Printf("Started %d workers", args.Workers)
+
 		var wg sync.WaitGroup
 		wg.Add(args.Workers)
 		for i := 0; i < args.Workers; i++ {
 			go func(i int) {
 				defer wg.Done()
-				if err := runWorker(args.HubAddr, &args.Options); err != nil {
-					log.Printf("Worker %d failed: %v", i, err)
+				name := fmt.Sprintf("%s/%d", args.Name, i)
+				if err := runWorker(name, args.HubAddr, args.RootDir); err != nil {
+					log.Printf("%s failed: %v", name, err)
 				}
 			}(i)
 		}

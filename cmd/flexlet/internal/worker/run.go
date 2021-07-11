@@ -28,17 +28,15 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/protobuf/ptypes"
+	"github.com/nya3jp/flex/flexpb"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/nya3jp/flex"
 )
 
-func runTask(ctx context.Context, task *flex.Task, rootDir string, stdout, stderr io.Writer) (code int, err error) {
+func runTask(ctx context.Context, task *flexpb.Task, rootDir string, stdout, stderr io.Writer) (code int, err error) {
 	tasksDir := filepath.Join(rootDir, "tasks")
 	cacheDir := filepath.Join(rootDir, "cache")
 	for _, dir := range []string{tasksDir, cacheDir} {
-		if err := os.Mkdir(dir, 0700); err != nil {
+		if err := os.Mkdir(dir, 0700); err != nil && !os.IsExist(err) {
 			return -1, err
 		}
 	}
@@ -57,18 +55,18 @@ func runTask(ctx context.Context, task *flex.Task, rootDir string, stdout, stder
 		}
 	}
 
-	if err := prepareTask(ctx, execDir, cacheDir, task.GetPackages()); err != nil {
+	if err := prepareTask(ctx, execDir, cacheDir, task.GetSpec().GetPackages()); err != nil {
 		return -1, fmt.Errorf("failed to prepare task: %v", err)
 	}
 
-	code, err = execCmd(ctx, outDir, execDir, task.GetCommand(), stdout, stderr, task.GetLimits())
+	code, err = execCmd(ctx, outDir, execDir, task.GetSpec().GetCommand(), stdout, stderr, task.GetSpec().GetLimits())
 	if err != nil {
 		return -1, fmt.Errorf("task execution failed: %v", err)
 	}
 	return code, nil
 }
 
-func prepareTask(ctx context.Context, execDir, cacheDir string, pkgs []*flex.TaskPackage) error {
+func prepareTask(ctx context.Context, execDir, cacheDir string, pkgs []*flexpb.TaskPackage) error {
 	pkgCacheDir := filepath.Join(cacheDir, "pkgs")
 	if err := os.MkdirAll(pkgCacheDir, 0700); err != nil {
 		return err
@@ -197,17 +195,11 @@ func installPkg(ctx context.Context, destDir string, f *os.File) error {
 	return nil
 }
 
-func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.TaskCommand, stdout, stderr io.Writer, limits *flex.TaskLimits) (code int, err error) {
-	if tlp := limits.GetTime(); tlp != nil {
-		tl, err := ptypes.Duration(tlp)
-		if err != nil {
-			return 0, err
-		}
-		if tl > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, tl)
-			defer cancel()
-		}
+func execCmd(ctx context.Context, outDir, execDir string, cmd *flexpb.TaskCommand, stdout, stderr io.Writer, limits *flexpb.TaskLimits) (code int, err error) {
+	if tl := limits.GetTime().AsDuration(); tl > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, tl)
+		defer cancel()
 	}
 
 	c := exec.CommandContext(ctx, "sh", "-c", cmd.GetShell())

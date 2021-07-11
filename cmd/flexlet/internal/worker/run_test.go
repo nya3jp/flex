@@ -28,9 +28,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/google/go-cmp/cmp"
-	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/flexpb"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func TestRunTask(t *testing.T) {
@@ -52,12 +52,14 @@ func TestRunTask(t *testing.T) {
 			}
 			defer os.RemoveAll(rootDir)
 
-			task := &flex.Task{
-				Command: &flex.TaskCommand{Shell: tc.cmd},
-				Limits:  &flex.TaskLimits{},
+			task := &flexpb.Task{
+				Spec: &flexpb.TaskSpec{
+					Command: &flexpb.TaskCommand{Shell: tc.cmd},
+					Limits:  &flexpb.TaskLimits{},
+				},
 			}
 			if tc.timeLimit {
-				task.Limits.Time = ptypes.DurationProto(time.Nanosecond)
+				task.Spec.Limits.Time = durationpb.New(time.Nanosecond)
 			}
 
 			status, err := runTask(context.Background(), task, rootDir, io.Discard, io.Discard)
@@ -81,8 +83,10 @@ func TestRunTask_Stdio(t *testing.T) {
 	}
 	defer os.RemoveAll(rootDir)
 
-	task := &flex.Task{
-		Command: &flex.TaskCommand{Shell: `echo foo; echo bar >&2`},
+	task := &flexpb.Task{
+		Spec: &flexpb.TaskSpec{
+			Command: &flexpb.TaskCommand{Shell: `echo foo; echo bar >&2`},
+		},
 	}
 
 	var stdout, stderr bytes.Buffer
@@ -159,11 +163,13 @@ func TestRunTask_Packaging(t *testing.T) {
 	server := httptest.NewServer(http.FileServer(http.Dir(webDir)))
 	defer server.Close()
 
-	task := &flex.Task{
-		Command: &flex.TaskCommand{Shell: "find -s ."},
-		Packages: []*flex.TaskPackage{
-			{Url: server.URL + "/pkg1.tar", InstallPath: "dir1"},
-			{Url: server.URL + "/pkg2.tar", InstallPath: ""},
+	task := &flexpb.Task{
+		Spec: &flexpb.TaskSpec{
+			Command: &flexpb.TaskCommand{Shell: "find -s ."},
+			Packages: []*flexpb.TaskPackage{
+				{Url: server.URL + "/pkg1.tar", InstallPath: "dir1"},
+				{Url: server.URL + "/pkg2.tar", InstallPath: ""},
+			},
 		},
 	}
 
