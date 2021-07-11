@@ -24,38 +24,13 @@ message TaskStatus {
   Task task = 1;
   TaskState state = 2;
   string worker = 3;
+  TaskResult result = 4;
 }
 
 enum TaskState {
   PENDING = 0;
   RUNNING = 1;
   FINISHED = 2;
-}
-
-message ListTasksRequest {
-  int64 count = 1;
-  int64 offset = 2;
-}
-
-message ListTasksResponse {
-  repeated Task tasks = 1;
-}
-
-message ListWorkersRequest {}
-
-message ListWorkersResponse {
-  repeated WorkerStatus workers = 1;
-}
-
-message WorkerStatus {
-  WorkerInfo info = 1;
-  WorkerState state = 2;
-  Task current_task = 3;
-}
-
-enum WorkerState {
-  DOWN = 0;
-  UP = 1;
 }
 
 service Worker {

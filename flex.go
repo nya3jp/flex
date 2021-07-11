@@ -31,7 +31,8 @@ func NewClient(db *sql.DB) *Client {
 	return &Client{db: db}
 }
 
-func (c *Client) AddTask(ctx context.Context, spec *flexpb.TaskSpec) (int64, error) {
+// AddTask inserts a task to the queue.
+func (c *Client) AddTask(ctx context.Context, spec *flexpb.TaskSpec) (id int64, err error) {
 	prio := spec.GetConstraints().GetPriority()
 	req, err := proto.Marshal(spec)
 	if err != nil {
@@ -45,11 +46,12 @@ func (c *Client) AddTask(ctx context.Context, spec *flexpb.TaskSpec) (int64, err
 	return result.LastInsertId()
 }
 
-func (c *Client) GetTaskStatus(ctx context.Context, id int64) (*flexpb.TaskStatus, error) {
+// GetTask returns a task of a specified ID.
+func (c *Client) GetTask(ctx context.Context, id int64) (*flexpb.TaskStatus, error) {
 	var stateStr, worker string
-	var req []byte
-	row := c.db.QueryRowContext(ctx, `SELECT state, worker, request FROM tasks WHERE id = ?`, id)
-	if err := row.Scan(&stateStr, &worker, &req); err != nil {
+	var req, res []byte
+	row := c.db.QueryRowContext(ctx, `SELECT state, worker, request, response FROM tasks WHERE id = ?`, id)
+	if err := row.Scan(&stateStr, &worker, &req, &res); err != nil {
 		return nil, err
 	}
 
@@ -57,17 +59,13 @@ func (c *Client) GetTaskStatus(ctx context.Context, id int64) (*flexpb.TaskStatu
 	if err := proto.Unmarshal(req, &spec); err != nil {
 		return nil, err
 	}
-
-	var state flexpb.TaskState
-	switch stateStr {
-	case "PENDING":
-		state = flexpb.TaskState_PENDING
-	case "RUNNING":
-		state = flexpb.TaskState_RUNNING
-	case "FINISHED":
-		state = flexpb.TaskState_FINISHED
-	default:
-		return nil, fmt.Errorf("unknown task state %s", stateStr)
+	var result flexpb.TaskResult
+	if err := proto.Unmarshal(res, &result); err != nil {
+		return nil, err
+	}
+	state, err := parseTaskState(stateStr)
+	if err != nil {
+		return nil, err
 	}
 
 	return &flexpb.TaskStatus{
@@ -77,5 +75,66 @@ func (c *Client) GetTaskStatus(ctx context.Context, id int64) (*flexpb.TaskStatu
 		},
 		State:  state,
 		Worker: worker,
+		Result: &result,
 	}, nil
+}
+
+// ListTasks enumerates tasks by descending order of ID.
+// limit is the maximum number of tasks returned. beforeID specifies where to
+// start enumerating tasks from; only tasks whose ID is smaller than beforeID
+// are returned. If you want to enumerate latest tasks, pass math.MaxInt64.
+func (c *Client) ListTasks(ctx context.Context, limit, beforeID int64) ([]*flexpb.TaskStatus, error) {
+	const query = `SELECT id, state, worker, request, response FROM tasks WHERE id < ? ORDER BY id DESC LIMIT ?`
+	rows, err := c.db.QueryContext(ctx, query, beforeID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []*flexpb.TaskStatus
+	for rows.Next() {
+		var id int64
+		var stateStr, worker string
+		var req, res []byte
+		if err := rows.Scan(&id, &stateStr, &worker, &req, &res); err != nil {
+			return nil, err
+		}
+
+		var spec flexpb.TaskSpec
+		if err := proto.Unmarshal(req, &spec); err != nil {
+			return nil, err
+		}
+		var result flexpb.TaskResult
+		if err := proto.Unmarshal(res, &result); err != nil {
+			return nil, err
+		}
+		state, err := parseTaskState(stateStr)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, &flexpb.TaskStatus{
+			Task: &flexpb.Task{
+				Id:   &flexpb.TaskId{Id: id},
+				Spec: &spec,
+			},
+			State:  state,
+			Worker: worker,
+			Result: &result,
+		})
+	}
+	return tasks, nil
+}
+
+func parseTaskState(state string) (flexpb.TaskState, error) {
+	switch state {
+	case "PENDING":
+		return flexpb.TaskState_PENDING, nil
+	case "RUNNING":
+		return flexpb.TaskState_RUNNING, nil
+	case "FINISHED":
+		return flexpb.TaskState_FINISHED, nil
+	default:
+		return flexpb.TaskState_PENDING, fmt.Errorf("unknown task state %s", state)
+	}
 }
