@@ -92,6 +92,10 @@ func main() {
 		}
 		defer db.Close()
 
+		if err := db.Ping(); err != nil {
+			return err
+		}
+
 		tq := taskqueue.New(db)
 		return server.Run(ctx, args.Port, tq, gcs, args.ArtifactsURL)
 	}(); err != nil {
