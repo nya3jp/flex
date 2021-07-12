@@ -17,6 +17,7 @@ package worker
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/nya3jp/flex/flexpb"
 	"google.golang.org/grpc/codes"
@@ -45,7 +46,7 @@ func New(opts *Options) *Worker {
 	}
 }
 
-func (w *Worker) RunTask(req *flexpb.RunTaskRequest, srv flexpb.Worker_RunTaskServer) error {
+func (w *Worker) RunTask(req *flexpb.RunTaskRequest, stream flexpb.Worker_RunTaskServer) error {
 	select {
 	case <-w.lock:
 	default:
@@ -53,12 +54,14 @@ func (w *Worker) RunTask(req *flexpb.RunTaskRequest, srv flexpb.Worker_RunTaskSe
 	}
 	defer func() { w.lock <- struct{}{} }()
 
-	ctx := srv.Context()
+	ctx := stream.Context()
 	taskID := req.GetTask().GetId().GetId()
 
 	log.Printf("Start task %d", taskID)
 
-	code, err := runTask(ctx, req.GetTask(), w.opts.RootDir, rpcStdout{srv}, rpcStderr{srv})
+	var sendLock sync.Mutex
+
+	code, err := runTask(ctx, req.GetTask(), w.opts.RootDir, rpcStdout{&sendLock, stream}, rpcStderr{&sendLock, stream})
 	var result flexpb.TaskResult
 	if err != nil {
 		result.Status = &flexpb.TaskResult_Error{Error: err.Error()}
@@ -67,7 +70,10 @@ func (w *Worker) RunTask(req *flexpb.RunTaskRequest, srv flexpb.Worker_RunTaskSe
 		result.Status = &flexpb.TaskResult_ExitCode{ExitCode: int32(code)}
 		log.Printf("Succeeded task %d", taskID)
 	}
-	return srv.Send(&flexpb.RunTaskResponse{Type: &flexpb.RunTaskResponse_Result{Result: &result}})
+
+	sendLock.Lock()
+	defer sendLock.Unlock()
+	return stream.Send(&flexpb.RunTaskResponse{Type: &flexpb.RunTaskResponse_Result{Result: &result}})
 }
 
 func (w *Worker) GetWorkerInfo(ctx context.Context, req *flexpb.GetWorkerInfoRequest) (*flexpb.GetWorkerInfoResponse, error) {
@@ -79,19 +85,25 @@ func (w *Worker) GetWorkerInfo(ctx context.Context, req *flexpb.GetWorkerInfoReq
 }
 
 type rpcStdout struct {
-	stream flexpb.Worker_RunTaskServer
+	sendLock *sync.Mutex
+	stream   flexpb.Worker_RunTaskServer
 }
 
 func (r rpcStdout) Write(p []byte) (int, error) {
+	r.sendLock.Lock()
+	defer r.sendLock.Unlock()
 	err := r.stream.Send(&flexpb.RunTaskResponse{Type: &flexpb.RunTaskResponse_Output{Output: &flexpb.TaskOutput{Stdout: p}}})
 	return len(p), err
 }
 
 type rpcStderr struct {
-	stream flexpb.Worker_RunTaskServer
+	sendLock *sync.Mutex
+	stream   flexpb.Worker_RunTaskServer
 }
 
 func (r rpcStderr) Write(p []byte) (int, error) {
+	r.sendLock.Lock()
+	defer r.sendLock.Unlock()
 	err := r.stream.Send(&flexpb.RunTaskResponse{Type: &flexpb.RunTaskResponse_Output{Output: &flexpb.TaskOutput{Stderr: p}}})
 	return len(p), err
 }
