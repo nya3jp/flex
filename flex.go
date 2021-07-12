@@ -48,10 +48,11 @@ func (c *Client) AddTask(ctx context.Context, spec *flexpb.TaskSpec) (id int64, 
 
 // GetTask returns a task of a specified ID.
 func (c *Client) GetTask(ctx context.Context, id int64) (*flexpb.TaskStatus, error) {
-	var stateStr, worker string
+	var stateStr string
+	var workerPtr *string
 	var req, res []byte
 	row := c.db.QueryRowContext(ctx, `SELECT state, worker, request, response FROM tasks WHERE id = ?`, id)
-	if err := row.Scan(&stateStr, &worker, &req, &res); err != nil {
+	if err := row.Scan(&stateStr, &workerPtr, &req, &res); err != nil {
 		return nil, err
 	}
 
@@ -66,6 +67,10 @@ func (c *Client) GetTask(ctx context.Context, id int64) (*flexpb.TaskStatus, err
 	state, err := parseTaskState(stateStr)
 	if err != nil {
 		return nil, err
+	}
+	var worker string
+	if workerPtr != nil {
+		worker = *workerPtr
 	}
 
 	return &flexpb.TaskStatus{
@@ -94,9 +99,10 @@ func (c *Client) ListTasks(ctx context.Context, limit, beforeID int64) ([]*flexp
 	var tasks []*flexpb.TaskStatus
 	for rows.Next() {
 		var id int64
-		var stateStr, worker string
+		var stateStr string
+		var workerPtr *string
 		var req, res []byte
-		if err := rows.Scan(&id, &stateStr, &worker, &req, &res); err != nil {
+		if err := rows.Scan(&id, &stateStr, &workerPtr, &req, &res); err != nil {
 			return nil, err
 		}
 
@@ -111,6 +117,10 @@ func (c *Client) ListTasks(ctx context.Context, limit, beforeID int64) ([]*flexp
 		state, err := parseTaskState(stateStr)
 		if err != nil {
 			return nil, err
+		}
+		var worker string
+		if workerPtr != nil {
+			worker = *workerPtr
 		}
 
 		tasks = append(tasks, &flexpb.TaskStatus{
