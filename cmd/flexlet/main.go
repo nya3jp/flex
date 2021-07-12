@@ -104,7 +104,8 @@ func main() {
 			go func(i int) {
 				defer wg.Done()
 				name := fmt.Sprintf("%s/%d", args.Name, i)
-				if err := runWorker(name, args.HubAddr, args.RootDir); err != nil {
+				for {
+					err := runWorker(name, args.HubAddr, args.RootDir)
 					log.Printf("%s failed: %v", name, err)
 				}
 			}(i)
