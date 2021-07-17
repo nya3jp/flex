@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
-	"strconv"
 	"time"
 
 	"github.com/nya3jp/flex"
@@ -30,10 +28,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
-)
-
-const (
-	defaultTimeLimit = time.Minute
 )
 
 type flexServer struct {
@@ -92,9 +86,9 @@ func (s *flexServer) GetJobOutput(ctx context.Context, req *flex.GetJobOutputReq
 	var name string
 	switch req.GetType() {
 	case flex.GetJobOutputRequest_STDOUT:
-		name = "stdout.txt"
+		name = stdoutName
 	case flex.GetJobOutputRequest_STDERR:
-		name = "stderr.txt"
+		name = stderrName
 	default:
 		return nil, fmt.Errorf("unknown output type: %d", req.GetType())
 	}
@@ -217,12 +211,4 @@ func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.Pa
 		return errors.New("invalid package hash")
 	}
 	return nil
-}
-
-func pathForPackage(hash string) string {
-	return path.Join("packages", hash)
-}
-
-func pathForTask(id *flex.JobId, name string) string {
-	return path.Join("jobs", strconv.FormatInt(id.GetIntId(), 10), name)
 }

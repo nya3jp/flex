@@ -16,17 +16,11 @@ package server
 
 import (
 	"context"
-	"time"
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/taskqueue"
 	"github.com/nya3jp/flex/internal/flexlet"
-)
-
-const (
-	preTaskTime  = time.Minute
-	postTaskTime = time.Minute
 )
 
 type flexletServer struct {
@@ -68,12 +62,12 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexlet.WaitTaskReque
 
 	writeLimit := job.GetSpec().GetLimits().GetTime().AsDuration() + preTaskTime + postTaskTime
 
-	stdoutPath := pathForTask(job.GetId(), "stdout.txt")
+	stdoutPath := pathForTask(job.GetId(), stdoutName)
 	stdoutURL, err := s.fs.PresignedURLForPut(ctx, stdoutPath, writeLimit)
 	if err != nil {
 		return nil, err
 	}
-	stderrPath := pathForTask(job.GetId(), "stderr.txt")
+	stderrPath := pathForTask(job.GetId(), stderrName)
 	stderrURL, err := s.fs.PresignedURLForPut(ctx, stderrPath, writeLimit)
 	if err != nil {
 		return nil, err

@@ -17,7 +17,20 @@ package server
 import (
 	"context"
 	"io"
+	"path"
+	"strconv"
 	"time"
+
+	"github.com/nya3jp/flex"
+)
+
+const (
+	defaultTimeLimit = time.Minute
+	preTaskTime      = time.Minute
+	postTaskTime     = time.Minute
+
+	stdoutName = "stdout.txt"
+	stderrName = "stderr.txt"
 )
 
 type FS interface {
@@ -26,4 +39,12 @@ type FS interface {
 	PresignedURLForGet(ctx context.Context, path string, dur time.Duration) (string, error)
 	PresignedURLForPut(ctx context.Context, path string, dur time.Duration) (string, error)
 	CanonicalURL(path string) string
+}
+
+func pathForPackage(hash string) string {
+	return path.Join("packages", hash)
+}
+
+func pathForTask(id *flex.JobId, name string) string {
+	return path.Join("jobs", strconv.FormatInt(id.GetIntId(), 10), name)
 }
