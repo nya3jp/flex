@@ -25,7 +25,7 @@ import (
 	"github.com/nya3jp/flex/internal/flexlet"
 )
 
-func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runner, workers int) error {
+func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, workers int) error {
 	tokens := make(chan struct{}, workers)
 	for i := 0; i < workers; i++ {
 		tokens <- struct{}{}
@@ -43,7 +43,7 @@ func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runne
 			return ctx.Err()
 		}
 
-		res, err := cl.WaitTask(ctx, &flexlet.WaitTaskRequest{})
+		res, err := cl.WaitTask(ctx, &flexlet.WaitTaskRequest{Id: flexletID})
 		if err != nil {
 			tokens <- struct{}{}
 			log.Printf("WARNING: WaitTask failed: %v", err)

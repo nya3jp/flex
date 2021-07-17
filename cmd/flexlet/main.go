@@ -16,75 +16,68 @@ package main
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 
+	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	flexlet2 "github.com/nya3jp/flex/internal/flexlet"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 )
 
-type args struct {
-	Name     string
-	Workers  int
-	HubAddr  string
-	StoreDir string
-}
-
-func parseArgs() (*args, error) {
-	hostName, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	args := &args{}
-	fs := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	fs.StringVar(&args.Name, "name", hostName, "Flexlet name")
-	fs.IntVar(&args.Workers, "workers", runtime.NumCPU(), "Number of workers")
-	fs.StringVar(&args.HubAddr, "hub", "", "Flexhub address")
-	fs.StringVar(&args.StoreDir, "storedir", filepath.Join(homeDir, ".cache/flexlet"), "Storage directory path")
-
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		return nil, err
-	}
-
-	if args.HubAddr == "" {
-		return nil, errors.New("-hub is required")
-	}
-	return args, nil
-}
-
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
+	defer cancel()
+
 	if err := func() error {
-		args, err := parseArgs()
+		hostName, err := os.Hostname()
 		if err != nil {
 			return err
 		}
 
-		ctx := context.Background()
-
-		runner, err := run.New(args.StoreDir)
+		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return err
 		}
 
-		cc, err := grpc.DialContext(ctx, args.HubAddr, grpc.WithInsecure())
-		if err != nil {
-			return err
-		}
-		cl := flexlet2.NewFlexletServiceClient(cc)
+		app := &cli.App{
+			Name:  "flexhub",
+			Usage: "Flexhub",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "name", Value: hostName, Usage: "Flexlet name"},
+				&cli.IntFlag{Name: "workers", Value: runtime.NumCPU(), Usage: "Number of workers"},
+				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
+				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
+			},
+			Action: func(c *cli.Context) error {
+				name := c.String("name")
+				workers := c.Int("workers")
+				hubAddr := c.String("hub")
+				storeDir := c.String("storedir")
 
-		return flexlet.Run(ctx, cl, runner, args.Workers)
+				runner, err := run.New(storeDir)
+				if err != nil {
+					return err
+				}
+
+				cc, err := grpc.DialContext(ctx, hubAddr, grpc.WithInsecure())
+				if err != nil {
+					return err
+				}
+				cl := flexlet2.NewFlexletServiceClient(cc)
+
+				flexletID := &flex.FlexletId{Name: name}
+
+				return flexlet.Run(ctx, cl, runner, flexletID, workers)
+			},
+		}
+		return app.RunContext(ctx, os.Args)
 	}(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}

@@ -21,4 +21,4 @@ RUN mkdir -p -m 700 /work && chown -R app:app /work
 ENV HOME=/app
 USER app
 
-ENTRYPOINT ["./flexlet", "-storedir", "/work"]
+ENTRYPOINT ["./flexlet", "--storedir", "/work"]
