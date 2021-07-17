@@ -165,8 +165,12 @@ func (s *flexServer) GetPackage(ctx context.Context, req *flex.GetPackageRequest
 	if err := resolvePackageId(ctx, s.meta, id); err != nil {
 		return nil, err
 	}
-	if err := s.fs.Exists(ctx, pathForPackage(id.GetHash())); os.IsNotExist(err) {
+	err := s.fs.Exists(ctx, pathForPackage(id.GetHash()))
+	if os.IsNotExist(err) {
 		return nil, status.Errorf(codes.NotFound, "package not found: %s: %v", id.GetHash(), err)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return &flex.GetPackageResponse{
 		Package: &flex.Package{
