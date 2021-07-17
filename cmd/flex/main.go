@@ -44,7 +44,7 @@ func main() {
 	log.SetFlags(0)
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:  "help",
-		Usage: "Show help",
+		Usage: "Shows help.",
 	}
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		log.Fatalf("ERROR: %v", err)

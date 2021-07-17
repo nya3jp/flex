@@ -24,9 +24,15 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var flagTag = &cli.StringSliceFlag{
+	Name:    "tag",
+	Aliases: []string{"t"},
+	Usage:   "Sets a tag for the new package. Can be repeated.",
+}
+
 var cmdPackage = &cli.Command{
 	Name:            "package",
-	Usage:           "Package-related subcommands",
+	Usage:           "Package-related subcommands.",
 	HideHelpCommand: true,
 	Subcommands: []*cli.Command{
 		cmdPackageCreate,
@@ -37,13 +43,11 @@ var cmdPackage = &cli.Command{
 }
 
 var cmdPackageCreate = &cli.Command{
-	Name:  "create",
-	Usage: "Create a package",
+	Name:      "create",
+	Usage:     "Creates a new package.",
+	ArgsUsage: "[files...]",
 	Flags: []cli.Flag{
-		&cli.StringSliceFlag{
-			Name:    "tag",
-			Aliases: []string{"t"},
-		},
+		flagTag,
 	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() == 0 {
@@ -67,8 +71,9 @@ var cmdPackageCreate = &cli.Command{
 }
 
 var cmdPackageTag = &cli.Command{
-	Name:  "tag",
-	Usage: "Tag a package",
+	Name:      "tag",
+	Usage:     "Sets a tag to a package.",
+	ArgsUsage: "tag hash",
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 2 {
 			return cli.ShowSubcommandHelp(c)
@@ -85,31 +90,30 @@ var cmdPackageTag = &cli.Command{
 }
 
 var cmdPackageInfo = &cli.Command{
-	Name:  "info",
-	Usage: "Show package info",
+	Name:      "info",
+	Usage:     "Shows package info.",
+	ArgsUsage: "{hash|tag}",
 	Action: func(c *cli.Context) error {
-		if c.NArg() == 0 {
+		if c.NArg() != 1 {
 			return cli.ShowSubcommandHelp(c)
 		}
+		name := c.Args().Get(0)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			packages := make([]*flex.Package, 0) // should not be nil
-			for _, name := range c.Args().Slice() {
-				res, err := cl.GetPackage(ctx, &flex.GetPackageRequest{Id: packageIDFor(name)})
-				if err != nil {
-					return err
-				}
-				packages = append(packages, res.GetPackage())
+			res, err := cl.GetPackage(ctx, &flex.GetPackageRequest{Id: packageIDFor(name)})
+			if err != nil {
+				return err
 			}
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
-			return enc.Encode(packages)
+			return enc.Encode(res.GetPackage())
 		})
 	},
 }
 
 var cmdPackageList = &cli.Command{
-	Name:  "list",
-	Usage: "List tagged packages",
+	Name:      "list",
+	Usage:     "Lists tagged packages.",
+	ArgsUsage: "",
 	Action: func(c *cli.Context) error {
 		if c.NArg() > 0 {
 			return cli.ShowSubcommandHelp(c)
