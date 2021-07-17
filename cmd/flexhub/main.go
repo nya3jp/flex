@@ -45,16 +45,6 @@ func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
 }
 
 func run(ctx context.Context, port int, dbURL, fsURL string) error {
-	if fsURL == "" {
-		dir, err := os.MkdirTemp("", "flexhub.pkgs.")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(dir)
-		fsURL = dir
-		log.Printf("WARNING: File storage URL not set; using %s", dir)
-	}
-
 	db, err := sql.Open("mysql", dbURL)
 	if err != nil {
 		return err
@@ -84,7 +74,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.IntFlag{Name: "port", Value: 7111, Usage: "TCP port to listen on"},
 			&cli.StringFlag{Name: "db", Required: true, Usage: `DB URL (ex. "username:password@tcp(hostname:port)/database?parseTime=true")`},
-			&cli.StringFlag{Name: "fs", Usage: "File storage URL"},
+			&cli.StringFlag{Name: "fs", Required: true, Usage: "File storage URL"},
 		},
 		Action: func(c *cli.Context) error {
 			return run(c.Context, c.Int("port"), c.String("db"), c.String("fs"))
