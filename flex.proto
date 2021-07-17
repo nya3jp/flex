@@ -1,0 +1,106 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package flex;
+
+option go_package = "github.com/nya3jp/flex";
+
+import "google/protobuf/duration.proto";
+
+message Job {
+  JobId id = 1;
+  JobSpec spec = 2;
+}
+
+message JobId {
+  int64 int_id = 1;
+}
+
+message JobSpec {
+  JobCommand command = 1;
+  JobInputs inputs = 2;
+  JobLimits limits = 3;
+  JobConstraints constraints = 4;
+}
+
+message JobInputs {
+  repeated JobPackage packages = 1;
+}
+
+message JobPackage {
+  PackageId id = 1;
+  string install_dir = 2;
+}
+
+message JobConstraints {
+  int32 priority = 1;
+}
+
+message JobStatus {
+  JobId id = 1;
+  JobSpec spec = 2;
+  JobState state = 3;
+  FlexletId flexlet = 4;
+  JobResult result = 5;
+}
+
+enum JobState {
+  PENDING = 0;
+  RUNNING = 1;
+  FINISHED = 2;
+}
+
+message Package {
+  PackageId id = 1;
+  PackageSpec spec = 2;
+}
+
+message PackageId {
+  string hash = 1;
+  string tag = 2;
+}
+
+message PackageSpec {
+}
+
+message FlexletId {
+  string name = 1;
+}
+
+message FlexletSpec {
+  int64 cores = 1;
+}
+
+message JobCommand {
+  string shell = 1;
+}
+
+message JobLimits {
+  google.protobuf.Duration time = 1;
+}
+
+message JobResult {
+  oneof status {
+    int32 exit_code = 1;
+    string error = 2;
+  }
+  google.protobuf.Duration time = 3;
+}
+
+message FileLocation {
+  string canonical_url = 1;
+  string presigned_url = 2;
+}

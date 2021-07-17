@@ -17,88 +17,80 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
-	"path/filepath"
-	"strings"
+	"os/signal"
 
-	"cloud.google.com/go/storage"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
+	"github.com/nya3jp/flex/cmd/flexhub/internal/filestorage"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/server"
-	"github.com/nya3jp/flex/cmd/flexhub/internal/taskqueue"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/sys/unix"
 )
 
-type args struct {
-	Port         int
-	DB           string
-	ArtifactsURL *url.URL
-}
-
-func parseArgs() (*args, error) {
-	args := &args{}
-	var artifactsURL string
-	fs := flag.NewFlagSet(filepath.Base(os.Args[0]), flag.ExitOnError)
-	fs.IntVar(&args.Port, "port", 0, "TCP port for worker connections")
-	fs.StringVar(&args.DB, "db", "", "DB URL")
-	fs.StringVar(&artifactsURL, "artifacts", "", "GCS URL to upload artifacts")
-	if err := fs.Parse(os.Args[1:]); err != nil {
-		return nil, err
-	}
-	if args.Port <= 0 || args.DB == "" || artifactsURL == "" {
-		return nil, errors.New("-db and -port and -artifacts are required")
-	}
-	parsed, err := url.Parse(artifactsURL)
+func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
+	parsed, err := url.Parse(fsURL)
 	if err != nil {
 		return nil, err
 	}
-	if parsed.Scheme != "gs" {
-		return nil, errors.New("-artifacts should start with gs://")
+	switch parsed.Scheme {
+	case "s3":
+		return filestorage.NewS3(ctx, fsURL)
+	default:
+		return nil, fmt.Errorf("unknown filesystem scheme: %s", parsed.Scheme)
 	}
-	if !strings.HasSuffix(parsed.Path, "/") {
-		return nil, errors.New("-artifacts should end with /")
+}
+
+func run(ctx context.Context, port int, dbURL, fsURL string) error {
+	if fsURL == "" {
+		dir, err := os.MkdirTemp("", "flexhub.pkgs.")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(dir)
+		fsURL = dir
+		log.Printf("WARNING: File storage URL not set; using %s", dir)
 	}
-	args.ArtifactsURL = parsed
-	return args, nil
+
+	db, err := sql.Open("mysql", dbURL)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	meta := database.NewMetaStore(db)
+	if err := meta.InitTables(ctx); err != nil {
+		return err
+	}
+
+	fs, err := newFileSystem(ctx, fsURL)
+	if err != nil {
+		return err
+	}
+
+	return server.Run(ctx, port, meta, fs)
 }
 
 func main() {
-	if err := func() error {
-		ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
+	defer cancel()
 
-		args, err := parseArgs()
-		if err != nil {
-			return err
-		}
-
-		gcs, err := storage.NewClient(ctx)
-		if err != nil {
-			return err
-		}
-		defer gcs.Close()
-
-		bucket := gcs.Bucket(args.ArtifactsURL.Host)
-		object := bucket.Object(strings.TrimPrefix(args.ArtifactsURL.Path, "/") + "write_test")
-		if err := object.NewWriter(ctx).Close(); err != nil {
-			return fmt.Errorf("failed verifying GCS write access: %w", err)
-		}
-
-		db, err := sql.Open("mysql", args.DB)
-		if err != nil {
-			return err
-		}
-		defer db.Close()
-
-		if err := db.Ping(); err != nil {
-			return err
-		}
-
-		tq := taskqueue.New(db)
-		return server.Run(ctx, args.Port, tq, gcs, args.ArtifactsURL)
-	}(); err != nil {
+	app := &cli.App{
+		Name:  "flexhub",
+		Usage: "Flexhub",
+		Flags: []cli.Flag{
+			&cli.IntFlag{Name: "port", Value: 7111, Usage: "TCP port to listen on"},
+			&cli.StringFlag{Name: "db", Required: true, Usage: `DB URL (ex. "username:password@tcp(hostname:port)/database?parseTime=true")`},
+			&cli.StringFlag{Name: "fs", Usage: "File storage URL"},
+		},
+		Action: func(c *cli.Context) error {
+			return run(ctx, c.Int("port"), c.String("db"), c.String("fs"))
+		},
+	}
+	if err := app.Run(os.Args); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
 }

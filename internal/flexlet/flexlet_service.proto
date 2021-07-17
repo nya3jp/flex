@@ -1,0 +1,65 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package flex;
+
+option go_package = "github.com/nya3jp/flex/internal/flexlet";
+
+import "flex.proto";
+import "internal/flexlet/flexlet.proto";
+
+service FlexletService {
+  rpc WaitTask(WaitTaskRequest) returns (WaitTaskResponse) {}
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {}
+  rpc ReturnTask(ReturnTaskRequest) returns (ReturnTaskResponse) {}
+  rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse) {}
+
+  rpc UpdateFlexletSpec(UpdateFlexletSpecRequest) returns (UpdateFlexletSpecResponse) {}
+}
+
+message WaitTaskRequest {
+  FlexletId id = 1;
+}
+
+message WaitTaskResponse {
+  Task task = 1;
+}
+
+message UpdateTaskRequest {
+  JobId id = 1;
+}
+
+message UpdateTaskResponse {}
+
+message ReturnTaskRequest {
+  JobId id = 1;
+}
+
+message ReturnTaskResponse {}
+
+message FinishTaskRequest {
+  JobId id = 1;
+  JobResult result = 2;
+}
+
+message FinishTaskResponse {}
+
+message UpdateFlexletSpecRequest {
+  FlexletId id = 1;
+  FlexletSpec spec = 2;
+}
+
+message UpdateFlexletSpecResponse {}

@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flexpb
+package hashutil
 
-//go:generate protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative flex.proto
+import (
+	"crypto/sha256"
+	"hash"
+	"regexp"
+)
+
+func NewStdHash() hash.Hash {
+	return sha256.New()
+}
+
+var sha256HashPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+func IsStdHash(hash string) bool {
+	return sha256HashPattern.MatchString(hash)
+}
