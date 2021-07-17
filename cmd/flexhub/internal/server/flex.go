@@ -107,7 +107,7 @@ func (s *flexServer) GetJobOutput(ctx context.Context, req *flex.GetJobOutputReq
 }
 
 func (s *flexServer) ListJobs(ctx context.Context, req *flex.ListJobsRequest) (*flex.ListJobsResponse, error) {
-	tasks, err := s.meta.ListJobs(ctx, req.GetLimit(), req.GetBeforeId())
+	tasks, err := s.meta.ListJobs(ctx, req.GetLimit(), req.GetBeforeId(), req.GetState())
 	if err != nil {
 		return nil, err
 	}

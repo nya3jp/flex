@@ -73,6 +73,7 @@ message GetJobOutputResponse {
 message ListJobsRequest {
   int64 limit = 1;
   JobId before_id = 2;
+  JobState state = 3;
 }
 
 message ListJobsResponse {

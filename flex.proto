@@ -58,9 +58,10 @@ message JobStatus {
 }
 
 enum JobState {
-  PENDING = 0;
-  RUNNING = 1;
-  FINISHED = 2;
+  UNSPECIFIED = 0;
+  PENDING = 1;
+  RUNNING = 2;
+  FINISHED = 3;
 }
 
 message Package {

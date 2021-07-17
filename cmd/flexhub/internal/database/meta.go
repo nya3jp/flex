@@ -113,13 +113,18 @@ func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (*flex.JobStatus
 	}, nil
 }
 
-func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.JobId) ([]*flex.JobStatus, error) {
+func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.JobId, state flex.JobState) ([]*flex.JobStatus, error) {
 	b := beforeID.GetIntId()
 	if beforeID == nil {
 		b = math.MaxInt64
 	}
-	const query = `SELECT id, state, flexlet, request, response FROM jobs WHERE id < ? ORDER BY id DESC LIMIT ?`
-	rows, err := m.db.QueryContext(ctx, query, b, limit)
+	query := `SELECT id, state, flexlet, request, response FROM jobs WHERE id < ? ORDER BY id DESC LIMIT ?`
+	args := []interface{}{b, limit}
+	if state != flex.JobState_UNSPECIFIED {
+		query = `SELECT id, state, flexlet, request, response FROM jobs WHERE id < ? AND state = ? ORDER BY id DESC LIMIT ?`
+		args = []interface{}{b, formatJobState(state), limit}
+	}
+	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -351,5 +356,18 @@ func parseJobState(state string) (flex.JobState, error) {
 		return flex.JobState_FINISHED, nil
 	default:
 		return flex.JobState_PENDING, fmt.Errorf("unknown job state %s", state)
+	}
+}
+
+func formatJobState(state flex.JobState) string {
+	switch state {
+	case flex.JobState_PENDING:
+		return "PENDING"
+	case flex.JobState_RUNNING:
+		return "RUNNING"
+	case flex.JobState_FINISHED:
+		return "FINISHED"
+	default:
+		return "UNKNOWN"
 	}
 }

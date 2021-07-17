@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nya3jp/flex"
@@ -78,6 +79,12 @@ var flagLimit = &cli.Int64Flag{
 	Aliases: []string{"n"},
 	Value:   10,
 	Usage:   "Sets the maximum number of jobs returned.",
+}
+
+var flagState = &cli.StringFlag{
+	Name:    "state",
+	Aliases: []string{"s"},
+	Usage:   "Filters jobs by state. Allowed values are: pending, running, finished.",
 }
 
 var cmdJob = &cli.Command{
@@ -253,14 +260,31 @@ var cmdJobList = &cli.Command{
 	ArgsUsage: "",
 	Flags: []cli.Flag{
 		flagLimit,
+		flagState,
 	},
 	Action: func(c *cli.Context) error {
 		limit := c.Int64(flagLimit.Name)
+		stateStr := c.String(flagState.Name)
 		if c.NArg() > 0 {
 			return cli.ShowSubcommandHelp(c)
 		}
+
+		var state flex.JobState
+		switch strings.ToLower(stateStr) {
+		case "":
+			state = flex.JobState_UNSPECIFIED
+		case "pending":
+			state = flex.JobState_PENDING
+		case "running":
+			state = flex.JobState_RUNNING
+		case "finished":
+			state = flex.JobState_FINISHED
+		default:
+			return fmt.Errorf("unknown job state: %s", stateStr)
+		}
+
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			res, err := cl.ListJobs(ctx, &flex.ListJobsRequest{Limit: limit})
+			res, err := cl.ListJobs(ctx, &flex.ListJobsRequest{Limit: limit, State: state})
 			if err != nil {
 				return err
 			}
