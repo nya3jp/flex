@@ -93,10 +93,8 @@ message JobLimits {
 }
 
 message JobResult {
-  oneof status {
-    int32 exit_code = 1;
-    string error = 2;
-  }
+  int32 exit_code = 1;
+  string message = 2;
   google.protobuf.Duration time = 3;
 }
 

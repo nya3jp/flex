@@ -62,22 +62,12 @@ func New(storeDir string) (*Runner, error) {
 }
 
 func (r *Runner) RunTask(ctx context.Context, spec *flexlet.TaskSpec) *flex.JobResult {
-	code, dur, err := runTask(ctx, spec, r.tasksDir, r.cache)
-	result := &flex.JobResult{
-		Time: durationpb.New(dur),
-	}
-	if err == nil {
-		result.Status = &flex.JobResult_ExitCode{ExitCode: int32(code)}
-	} else {
-		result.Status = &flex.JobResult_Error{Error: err.Error()}
-	}
-	return result
-}
-
-func runTask(ctx context.Context, spec *flexlet.TaskSpec, tasksDir string, cache *filecache.Manager) (code int, dur time.Duration, err error) {
-	taskDir, err := ioutil.TempDir(tasksDir, "")
+	taskDir, err := ioutil.TempDir(r.tasksDir, "")
 	if err != nil {
-		return -1, 0, fmt.Errorf("failed to create a task directory: %w", err)
+		return &flex.JobResult{
+			ExitCode: -1,
+			Message:  fmt.Sprintf("failed to create a task directory: %v", err),
+		}
 	}
 	defer os.RemoveAll(taskDir)
 
@@ -85,38 +75,56 @@ func runTask(ctx context.Context, spec *flexlet.TaskSpec, tasksDir string, cache
 	outDir := filepath.Join(taskDir, "out")
 	for _, dir := range []string{execDir, outDir} {
 		if err := os.Mkdir(dir, 0700); err != nil {
-			return -1, 0, err
+			return &flex.JobResult{
+				ExitCode: -1,
+				Message:  fmt.Sprintf("failed to prepare a task: %v", err),
+			}
 		}
 	}
 
-	if err := prepareInputs(ctx, execDir, spec.GetInputs(), cache); err != nil {
-		return -1, 0, fmt.Errorf("failed to prepare task: %w", err)
+	if err := prepareInputs(ctx, execDir, spec.GetInputs(), r.cache); err != nil {
+		return &flex.JobResult{
+			ExitCode: -1,
+			Message:  fmt.Sprintf("failed to prepare a task: %v", err),
+		}
 	}
 
 	stdout, err := os.Create(filepath.Join(taskDir, "stdout.txt"))
 	if err != nil {
-		return -1, 0, err
+		return &flex.JobResult{
+			ExitCode: -1,
+			Message:  fmt.Sprintf("failed to prepare task stdout: %v", err),
+		}
 	}
 	defer stdout.Close()
 
 	stderr, err := os.Create(filepath.Join(taskDir, "stderr.txt"))
 	if err != nil {
-		return -1, 0, err
+		return &flex.JobResult{
+			ExitCode: -1,
+			Message:  fmt.Sprintf("failed to prepare task stderr: %v", err),
+		}
 	}
 	defer stderr.Close()
 
 	start := time.Now()
 	code, execErr := execCmd(ctx, outDir, execDir, spec.GetCommand(), stdout, stderr, spec.GetLimits())
-	dur = time.Since(start)
+	dur := time.Since(start)
 
 	if err := uploadOutputs(ctx, spec.GetOutputs(), stdout, stderr); err != nil {
 		log.Printf("WARNING: Uploading outputs failed: %v", err)
 	}
 
-	if execErr != nil {
-		return -1, dur, fmt.Errorf("task execution failed: %w", execErr)
+	result := &flex.JobResult{
+		ExitCode: int32(code),
+		Time:     durationpb.New(dur),
 	}
-	return code, dur, nil
+	if execErr != nil {
+		result.Message = execErr.Error()
+	} else {
+		result.Message = "success"
+	}
+	return result
 }
 
 func prepareInputs(ctx context.Context, execDir string, inputs *flexlet.TaskInputs, cache *filecache.Manager) error {
@@ -241,9 +249,10 @@ func putLocation(ctx context.Context, loc *flex.FileLocation, f io.ReadSeeker) e
 }
 
 func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.JobCommand, stdout, stderr io.Writer, limits *flex.JobLimits) (code int, err error) {
-	origCtx := ctx
+	const graceTime = 5 * time.Second
+
 	timeLimit := limits.GetTime().AsDuration()
-	ctx, cancel := context.WithTimeout(ctx, timeLimit)
+	ctx, cancel := context.WithTimeout(ctx, timeLimit+graceTime)
 	defer cancel()
 
 	c := exec.CommandContext(ctx, "sh", "-c", cmd.GetShell())
@@ -251,21 +260,36 @@ func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.JobCommand, 
 	c.Stdout = stdout
 	c.Stderr = stderr
 	c.Env = append(os.Environ(), "OUT_DIR="+outDir)
-	if err := c.Run(); err != nil {
-		if ctx.Err() == context.DeadlineExceeded && origCtx.Err() == nil {
-			return -1, fmt.Errorf("timeout reached (%v)", timeLimit)
+	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	if err := c.Start(); err != nil {
+		return -1, err
+	}
+	defer unix.Kill(-c.Process.Pid, unix.SIGKILL)
+
+	timer := time.NewTimer(timeLimit)
+	defer timer.Stop()
+	go func() {
+		select {
+		case <-timer.C:
+			c.Process.Signal(unix.SIGTERM)
+		case <-ctx.Done():
 		}
+	}()
+
+	if err := c.Wait(); err != nil {
 		if errExit, ok := err.(*exec.ExitError); ok {
 			if status, ok := errExit.Sys().(syscall.WaitStatus); ok {
 				if status.Exited() {
-					return status.ExitStatus(), nil
+					code := status.ExitStatus()
+					return code, fmt.Errorf("exit status %d", code)
 				}
 				if status.Signaled() {
-					return 0, fmt.Errorf("signal: %s", unix.SignalName(status.Signal()))
+					sig := status.Signal()
+					return 128 + int(sig), fmt.Errorf("signal: %s", unix.SignalName(sig))
 				}
 			}
 		}
-		return 0, err
+		return -1, err
 	}
 	return 0, nil
 }

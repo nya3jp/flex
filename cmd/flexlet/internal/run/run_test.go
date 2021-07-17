@@ -31,6 +31,7 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	"github.com/nya3jp/flex/internal/flexlet"
+	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -57,7 +58,8 @@ func TestRunner_RunTask(t *testing.T) {
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
-				Status: &flex.JobResult_ExitCode{ExitCode: 0},
+				ExitCode: 0,
+				Message:  "success",
 			},
 		},
 		{
@@ -66,7 +68,8 @@ func TestRunner_RunTask(t *testing.T) {
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
-				Status: &flex.JobResult_ExitCode{ExitCode: 28},
+				ExitCode: 28,
+				Message:  "exit status 28",
 			},
 		},
 		{
@@ -75,7 +78,8 @@ func TestRunner_RunTask(t *testing.T) {
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
-				Status: &flex.JobResult_Error{Error: "task execution failed: signal: SIGINT"},
+				ExitCode: int32(128 + unix.SIGINT),
+				Message:  "signal: SIGINT",
 			},
 		},
 		{
@@ -84,7 +88,8 @@ func TestRunner_RunTask(t *testing.T) {
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Nanosecond)},
 			},
 			want: &flex.JobResult{
-				Status: &flex.JobResult_Error{Error: "task execution failed: timeout reached (1ns)"},
+				ExitCode: int32(128 + unix.SIGTERM),
+				Message:  "signal: SIGTERM",
 			},
 		},
 	} {

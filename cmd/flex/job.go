@@ -134,16 +134,7 @@ var cmdJobCreate = &cli.Command{
 				}
 				if state == flex.JobState_FINISHED {
 					result := job.GetResult()
-
-					var status string
-					switch s := result.GetStatus().(type) {
-					case *flex.JobResult_ExitCode:
-						status = fmt.Sprintf("exit status %d", s.ExitCode)
-					case *flex.JobResult_Error:
-						status = s.Error
-					}
-
-					log.Printf("Job finished: %s (%v)", status, result.GetTime().AsDuration())
+					log.Printf("Job finished: %s (%v)", result.GetMessage(), result.GetTime().AsDuration())
 					break
 				}
 
