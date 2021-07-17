@@ -85,7 +85,7 @@ message FlexletSpec {
 }
 
 message JobCommand {
-  string shell = 1;
+  repeated string args = 1;
 }
 
 message JobLimits {

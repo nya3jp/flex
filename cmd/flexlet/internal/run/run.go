@@ -255,7 +255,12 @@ func execCmd(ctx context.Context, outDir, execDir string, cmd *flex.JobCommand, 
 	ctx, cancel := context.WithTimeout(ctx, timeLimit+graceTime)
 	defer cancel()
 
-	c := exec.CommandContext(ctx, "sh", "-c", cmd.GetShell())
+	args := cmd.GetArgs()
+	if len(args) == 0 {
+		return -1, errors.New("command is empty")
+	}
+
+	c := exec.CommandContext(ctx, args[0], args[1:]...)
 	c.Dir = execDir
 	c.Stdout = stdout
 	c.Stderr = stderr

@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/nya3jp/flex"
@@ -59,6 +58,10 @@ var cmdJobCreate = &cli.Command{
 			Name:    "package",
 			Aliases: []string{"p"},
 		},
+		&cli.BoolFlag{
+			Name:    "shell",
+			Aliases: []string{"s"},
+		},
 		&cli.DurationFlag{
 			Name:    "time",
 			Aliases: []string{"t"},
@@ -73,10 +76,20 @@ var cmdJobCreate = &cli.Command{
 		priority := c.Int("priority")
 		files := c.StringSlice("file")
 		packages := c.StringSlice("package")
+		shell := c.Bool("shell")
 		timeLimit := c.Duration("time")
 		wait := c.Bool("wait")
-		if c.NArg() == 0 {
-			return cli.ShowSubcommandHelp(c)
+		var args []string
+		if shell {
+			if c.NArg() != 1 {
+				return cli.ShowSubcommandHelp(c)
+			}
+			args = []string{"sh", "-c", c.Args().Get(0)}
+		} else {
+			if c.NArg() == 0 {
+				return cli.ShowSubcommandHelp(c)
+			}
+			args = c.Args().Slice()
 		}
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
 			if len(files) > 0 {
@@ -94,7 +107,7 @@ var cmdJobCreate = &cli.Command{
 
 			spec := &flex.JobSpec{
 				Command: &flex.JobCommand{
-					Shell: strings.Join(c.Args().Slice(), " "),
+					Args: args,
 				},
 				Inputs: &flex.JobInputs{
 					Packages: pkgs,

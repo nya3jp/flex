@@ -24,6 +24,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -54,7 +55,7 @@ func TestRunner_RunTask(t *testing.T) {
 	}{
 		{
 			spec: &flexlet.TaskSpec{
-				Command: &flex.JobCommand{Shell: "true"},
+				Command: &flex.JobCommand{Args: []string{"true"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
@@ -64,7 +65,7 @@ func TestRunner_RunTask(t *testing.T) {
 		},
 		{
 			spec: &flexlet.TaskSpec{
-				Command: &flex.JobCommand{Shell: "exit 28"},
+				Command: &flex.JobCommand{Args: []string{"sh", "-c", "exit 28"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
@@ -74,7 +75,7 @@ func TestRunner_RunTask(t *testing.T) {
 		},
 		{
 			spec: &flexlet.TaskSpec{
-				Command: &flex.JobCommand{Shell: "kill -INT $$"},
+				Command: &flex.JobCommand{Args: []string{"sh", "-c", "kill -INT $$"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.JobResult{
@@ -84,7 +85,7 @@ func TestRunner_RunTask(t *testing.T) {
 		},
 		{
 			spec: &flexlet.TaskSpec{
-				Command: &flex.JobCommand{Shell: "sleep 60"},
+				Command: &flex.JobCommand{Args: []string{"sleep", "60"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Nanosecond)},
 			},
 			want: &flex.JobResult{
@@ -93,7 +94,7 @@ func TestRunner_RunTask(t *testing.T) {
 			},
 		},
 	} {
-		t.Run(tc.spec.GetCommand().GetShell(), func(t *testing.T) {
+		t.Run(strings.Join(tc.spec.GetCommand().GetArgs(), " "), func(t *testing.T) {
 			got := runner.RunTask(context.Background(), tc.spec)
 			if diff := cmp.Diff(got, tc.want, protocmp.Transform(), protocmp.IgnoreFields(&flex.JobResult{}, "time")); diff != "" {
 				t.Fatalf("JobResult mismatch (-got +want):\n%s", diff)
@@ -132,7 +133,7 @@ func TestRunner_RunTask_Inputs(t *testing.T) {
 	defer stdout.Close()
 
 	spec := &flexlet.TaskSpec{
-		Command: &flex.JobCommand{Shell: "find -s ."},
+		Command: &flex.JobCommand{Args: []string{"find", "-s", "."}},
 		Inputs: &flexlet.TaskInputs{
 			Packages: []*flexlet.TaskPackage{
 				{
@@ -200,7 +201,7 @@ func TestRunner_RunTask_Outputs(t *testing.T) {
 	defer stderr.Close()
 
 	spec := &flexlet.TaskSpec{
-		Command: &flex.JobCommand{Shell: `echo foo; echo bar >&2`},
+		Command: &flex.JobCommand{Args: []string{"sh", "-c", "echo foo; echo bar >&2"}},
 		Outputs: &flexlet.TaskOutputs{
 			Stdout: &flex.FileLocation{
 				CanonicalUrl: "file://" + stdout.Name(),
