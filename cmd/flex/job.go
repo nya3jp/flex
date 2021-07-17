@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -79,6 +80,13 @@ var flagLimit = &cli.Int64Flag{
 	Aliases: []string{"n"},
 	Value:   10,
 	Usage:   "Sets the maximum number of jobs returned.",
+}
+
+var flagBefore = &cli.Int64Flag{
+	Name:        "before",
+	Usage:       "Returns jobs whose ID is less than the specified value.",
+	Value:       math.MaxInt64,
+	DefaultText: "inf",
 }
 
 var flagState = &cli.StringFlag{
@@ -260,10 +268,12 @@ var cmdJobList = &cli.Command{
 	ArgsUsage: "",
 	Flags: []cli.Flag{
 		flagLimit,
+		flagBefore,
 		flagState,
 	},
 	Action: func(c *cli.Context) error {
 		limit := c.Int64(flagLimit.Name)
+		before := c.Int64(flagBefore.Name)
 		stateStr := c.String(flagState.Name)
 		if c.NArg() > 0 {
 			return cli.ShowSubcommandHelp(c)
@@ -284,7 +294,11 @@ var cmdJobList = &cli.Command{
 		}
 
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			res, err := cl.ListJobs(ctx, &flex.ListJobsRequest{Limit: limit, State: state})
+			res, err := cl.ListJobs(ctx, &flex.ListJobsRequest{
+				Limit:    limit,
+				BeforeId: &flex.JobId{IntId: before},
+				State:    state,
+			})
 			if err != nil {
 				return err
 			}
