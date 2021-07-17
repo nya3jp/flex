@@ -87,10 +87,10 @@ func main() {
 			&cli.StringFlag{Name: "fs", Usage: "File storage URL"},
 		},
 		Action: func(c *cli.Context) error {
-			return run(ctx, c.Int("port"), c.String("db"), c.String("fs"))
+			return run(c.Context, c.Int("port"), c.String("db"), c.String("fs"))
 		},
 	}
-	if err := app.Run(os.Args); err != nil {
+	if err := app.RunContext(ctx, os.Args); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
 }
