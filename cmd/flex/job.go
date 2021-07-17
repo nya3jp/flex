@@ -29,6 +29,7 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var cmdJob = &cli.Command{
@@ -58,6 +59,11 @@ var cmdJobCreate = &cli.Command{
 			Name:    "package",
 			Aliases: []string{"p"},
 		},
+		&cli.DurationFlag{
+			Name:    "time",
+			Aliases: []string{"t"},
+			Value:   time.Minute,
+		},
 		&cli.BoolFlag{
 			Name:    "wait",
 			Aliases: []string{"w"},
@@ -67,6 +73,7 @@ var cmdJobCreate = &cli.Command{
 		priority := c.Int("priority")
 		files := c.StringSlice("file")
 		packages := c.StringSlice("package")
+		timeLimit := c.Duration("time")
 		wait := c.Bool("wait")
 		if c.NArg() == 0 {
 			return cli.ShowSubcommandHelp(c)
@@ -91,6 +98,9 @@ var cmdJobCreate = &cli.Command{
 				},
 				Inputs: &flex.JobInputs{
 					Packages: pkgs,
+				},
+				Limits: &flex.JobLimits{
+					Time: durationpb.New(timeLimit),
 				},
 				Constraints: &flex.JobConstraints{
 					Priority: int32(priority),
