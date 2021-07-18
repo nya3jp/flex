@@ -49,12 +49,12 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 
 		go func() {
 			defer func() { tokens <- struct{}{} }()
-			stopUpdater := startUpdater(ctx, cl, task.GetId())
+			stopUpdater := startUpdater(ctx, cl, task.GetRef())
 			defer stopUpdater()
-			log.Printf("INFO: Start task %d: %s", task.GetId().GetIntId(), task.GetSpec().String())
+			log.Printf("INFO: Start task %s for job %d: %s", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId(), task.GetSpec().String())
 			result := runner.RunTask(ctx, task.GetSpec())
-			log.Printf("INFO: End task %d", task.GetId().GetIntId())
-			if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Id: task.GetId(), Result: result}); err != nil {
+			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
+			if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Ref: task.GetRef(), Result: result}); err != nil {
 				log.Printf("WARNING: FinishTask failed: %v", err)
 			}
 		}()
@@ -81,18 +81,18 @@ func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, f
 func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
-	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{Id: flexletID})
+	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletId: flexletID})
 	if err != nil {
 		return nil, err
 	}
 	return res.GetTask(), nil
 }
 
-func startUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, id *flex.JobId) context.CancelFunc {
+func startUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, ref *flexletpb.TaskRef) context.CancelFunc {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		for {
-			_, _ = cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Id: id})
+			_, _ = cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Ref: ref})
 			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
 				break
 			}

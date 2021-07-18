@@ -51,14 +51,14 @@ func TestRunner_RunTask(t *testing.T) {
 
 	for _, tc := range []struct {
 		spec *flexletpb.TaskSpec
-		want *flex.JobResult
+		want *flex.TaskResult
 	}{
 		{
 			spec: &flexletpb.TaskSpec{
 				Command: &flex.JobCommand{Args: []string{"true"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
-			want: &flex.JobResult{
+			want: &flex.TaskResult{
 				ExitCode: 0,
 				Message:  "success",
 			},
@@ -68,7 +68,7 @@ func TestRunner_RunTask(t *testing.T) {
 				Command: &flex.JobCommand{Args: []string{"sh", "-c", "exit 28"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
-			want: &flex.JobResult{
+			want: &flex.TaskResult{
 				ExitCode: 28,
 				Message:  "exit status 28",
 			},
@@ -78,7 +78,7 @@ func TestRunner_RunTask(t *testing.T) {
 				Command: &flex.JobCommand{Args: []string{"sh", "-c", "kill -INT $$"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
-			want: &flex.JobResult{
+			want: &flex.TaskResult{
 				ExitCode: int32(128 + unix.SIGINT),
 				Message:  "signal: SIGINT",
 			},
@@ -88,7 +88,7 @@ func TestRunner_RunTask(t *testing.T) {
 				Command: &flex.JobCommand{Args: []string{"sleep", "60"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Nanosecond)},
 			},
-			want: &flex.JobResult{
+			want: &flex.TaskResult{
 				ExitCode: int32(128 + unix.SIGTERM),
 				Message:  "signal: SIGTERM",
 			},
@@ -96,8 +96,8 @@ func TestRunner_RunTask(t *testing.T) {
 	} {
 		t.Run(strings.Join(tc.spec.GetCommand().GetArgs(), " "), func(t *testing.T) {
 			got := runner.RunTask(context.Background(), tc.spec)
-			if diff := cmp.Diff(got, tc.want, protocmp.Transform(), protocmp.IgnoreFields(&flex.JobResult{}, "time")); diff != "" {
-				t.Fatalf("JobResult mismatch (-got +want):\n%s", diff)
+			if diff := cmp.Diff(got, tc.want, protocmp.Transform(), protocmp.IgnoreFields(&flex.TaskResult{}, "time")); diff != "" {
+				t.Fatalf("TaskResult mismatch (-got +want):\n%s", diff)
 			}
 		})
 	}

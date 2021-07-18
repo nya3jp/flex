@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type FlexletServiceClient interface {
 	WaitTask(ctx context.Context, in *WaitTaskRequest, opts ...grpc.CallOption) (*WaitTaskResponse, error)
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
-	ReturnTask(ctx context.Context, in *ReturnTaskRequest, opts ...grpc.CallOption) (*ReturnTaskResponse, error)
 	FinishTask(ctx context.Context, in *FinishTaskRequest, opts ...grpc.CallOption) (*FinishTaskResponse, error)
 	UpdateFlexletSpec(ctx context.Context, in *UpdateFlexletSpecRequest, opts ...grpc.CallOption) (*UpdateFlexletSpecResponse, error)
 }
@@ -51,15 +50,6 @@ func (c *flexletServiceClient) UpdateTask(ctx context.Context, in *UpdateTaskReq
 	return out, nil
 }
 
-func (c *flexletServiceClient) ReturnTask(ctx context.Context, in *ReturnTaskRequest, opts ...grpc.CallOption) (*ReturnTaskResponse, error) {
-	out := new(ReturnTaskResponse)
-	err := c.cc.Invoke(ctx, "/flex.FlexletService/ReturnTask", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *flexletServiceClient) FinishTask(ctx context.Context, in *FinishTaskRequest, opts ...grpc.CallOption) (*FinishTaskResponse, error) {
 	out := new(FinishTaskResponse)
 	err := c.cc.Invoke(ctx, "/flex.FlexletService/FinishTask", in, out, opts...)
@@ -84,7 +74,6 @@ func (c *flexletServiceClient) UpdateFlexletSpec(ctx context.Context, in *Update
 type FlexletServiceServer interface {
 	WaitTask(context.Context, *WaitTaskRequest) (*WaitTaskResponse, error)
 	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
-	ReturnTask(context.Context, *ReturnTaskRequest) (*ReturnTaskResponse, error)
 	FinishTask(context.Context, *FinishTaskRequest) (*FinishTaskResponse, error)
 	UpdateFlexletSpec(context.Context, *UpdateFlexletSpecRequest) (*UpdateFlexletSpecResponse, error)
 	mustEmbedUnimplementedFlexletServiceServer()
@@ -99,9 +88,6 @@ func (UnimplementedFlexletServiceServer) WaitTask(context.Context, *WaitTaskRequ
 }
 func (UnimplementedFlexletServiceServer) UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTask not implemented")
-}
-func (UnimplementedFlexletServiceServer) ReturnTask(context.Context, *ReturnTaskRequest) (*ReturnTaskResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReturnTask not implemented")
 }
 func (UnimplementedFlexletServiceServer) FinishTask(context.Context, *FinishTaskRequest) (*FinishTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FinishTask not implemented")
@@ -158,24 +144,6 @@ func _FlexletService_UpdateTask_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FlexletService_ReturnTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReturnTaskRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FlexletServiceServer).ReturnTask(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/flex.FlexletService/ReturnTask",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FlexletServiceServer).ReturnTask(ctx, req.(*ReturnTaskRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _FlexletService_FinishTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FinishTaskRequest)
 	if err := dec(in); err != nil {
@@ -226,10 +194,6 @@ var FlexletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateTask",
 			Handler:    _FlexletService_UpdateTask_Handler,
-		},
-		{
-			MethodName: "ReturnTask",
-			Handler:    _FlexletService_ReturnTask_Handler,
 		},
 		{
 			MethodName: "FinishTask",

@@ -21,8 +21,13 @@ option go_package = "github.com/nya3jp/flex/internal/flexletpb";
 import "flex.proto";
 
 message Task {
-  JobId id = 1;
+  TaskRef ref = 1;
   TaskSpec spec = 2;
+}
+
+message TaskRef {
+  TaskId task_id = 1;
+  JobId job_id = 2;
 }
 
 message TaskSpec {

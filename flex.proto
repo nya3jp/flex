@@ -50,11 +50,11 @@ message JobConstraints {
 }
 
 message JobStatus {
-  JobId id = 1;
-  JobSpec spec = 2;
-  JobState state = 3;
-  FlexletId flexlet = 4;
-  JobResult result = 5;
+  Job job = 1;
+  JobState state = 2;
+  TaskId task_id = 3;
+  FlexletId flexlet_id = 4;
+  TaskResult result = 5;
 }
 
 enum JobState {
@@ -93,7 +93,7 @@ message JobLimits {
   google.protobuf.Duration time = 1;
 }
 
-message JobResult {
+message TaskResult {
   int32 exit_code = 1;
   string message = 2;
   google.protobuf.Duration time = 3;
@@ -102,4 +102,8 @@ message JobResult {
 message FileLocation {
   string canonical_url = 1;
   string presigned_url = 2;
+}
+
+message TaskId {
+  string uuid = 1;
 }

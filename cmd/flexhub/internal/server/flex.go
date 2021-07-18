@@ -83,6 +83,11 @@ func (s *flexServer) GetJob(ctx context.Context, req *flex.GetJobRequest) (*flex
 }
 
 func (s *flexServer) GetJobOutput(ctx context.Context, req *flex.GetJobOutputRequest) (*flex.GetJobOutputResponse, error) {
+	status, err := s.meta.GetJob(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+
 	var name string
 	switch req.GetType() {
 	case flex.GetJobOutputRequest_STDOUT:
@@ -92,7 +97,7 @@ func (s *flexServer) GetJobOutput(ctx context.Context, req *flex.GetJobOutputReq
 	default:
 		return nil, fmt.Errorf("unknown output type: %d", req.GetType())
 	}
-	path := pathForTask(req.GetId(), name)
+	path := pathForTask(status.GetTaskId(), name)
 
 	url, err := s.fs.PresignedURLForGet(ctx, path, time.Minute)
 	if err != nil {

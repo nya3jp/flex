@@ -22,6 +22,7 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/internal/ctxutil"
+	"github.com/nya3jp/flex/internal/flexletpb"
 )
 
 type TaskQueue struct {
@@ -38,23 +39,23 @@ func New(meta *database.MetaStore) *TaskQueue {
 	}
 }
 
-func (q *TaskQueue) WaitPendingJob(ctx context.Context, flexletID *flex.FlexletId) (*flex.Job, error) {
+func (q *TaskQueue) WaitTask(ctx context.Context, flexletID *flex.FlexletId) (*flexletpb.TaskRef, *flex.JobSpec, error) {
 	select {
 	case <-q.waitLock:
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, nil, ctx.Err()
 	}
 	defer func() { q.waitLock <- struct{}{} }()
 
 	for {
-		job, err := q.meta.TakePendingJob(ctx, flexletID)
+		taskID, spec, err := q.meta.TakeTask(ctx, flexletID)
 		if errors.Is(err, database.ErrNoPendingTask) {
 			ctxutil.Sleep(ctx, time.Second)
 			continue
 		}
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return job, nil
+		return taskID, spec, nil
 	}
 }

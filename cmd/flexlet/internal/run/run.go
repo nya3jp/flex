@@ -61,10 +61,10 @@ func New(storeDir string) (*Runner, error) {
 	}, nil
 }
 
-func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.JobResult {
+func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.TaskResult {
 	taskDir, err := ioutil.TempDir(r.tasksDir, "")
 	if err != nil {
-		return &flex.JobResult{
+		return &flex.TaskResult{
 			ExitCode: -1,
 			Message:  fmt.Sprintf("failed to create a task directory: %v", err),
 		}
@@ -75,7 +75,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.Jo
 	outDir := filepath.Join(taskDir, "out")
 	for _, dir := range []string{execDir, outDir} {
 		if err := os.Mkdir(dir, 0700); err != nil {
-			return &flex.JobResult{
+			return &flex.TaskResult{
 				ExitCode: -1,
 				Message:  fmt.Sprintf("failed to prepare a task: %v", err),
 			}
@@ -83,7 +83,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.Jo
 	}
 
 	if err := prepareInputs(ctx, execDir, spec.GetInputs(), r.cache); err != nil {
-		return &flex.JobResult{
+		return &flex.TaskResult{
 			ExitCode: -1,
 			Message:  fmt.Sprintf("failed to prepare a task: %v", err),
 		}
@@ -91,7 +91,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.Jo
 
 	stdout, err := os.Create(filepath.Join(taskDir, "stdout.txt"))
 	if err != nil {
-		return &flex.JobResult{
+		return &flex.TaskResult{
 			ExitCode: -1,
 			Message:  fmt.Sprintf("failed to prepare task stdout: %v", err),
 		}
@@ -100,7 +100,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.Jo
 
 	stderr, err := os.Create(filepath.Join(taskDir, "stderr.txt"))
 	if err != nil {
-		return &flex.JobResult{
+		return &flex.TaskResult{
 			ExitCode: -1,
 			Message:  fmt.Sprintf("failed to prepare task stderr: %v", err),
 		}
@@ -115,7 +115,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.Jo
 		log.Printf("WARNING: Uploading outputs failed: %v", err)
 	}
 
-	result := &flex.JobResult{
+	result := &flex.TaskResult{
 		ExitCode: int32(code),
 		Time:     durationpb.New(dur),
 	}

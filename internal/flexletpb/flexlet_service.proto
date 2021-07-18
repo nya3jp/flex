@@ -24,14 +24,13 @@ import "internal/flexletpb/flexlet.proto";
 service FlexletService {
   rpc WaitTask(WaitTaskRequest) returns (WaitTaskResponse) {}
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {}
-  rpc ReturnTask(ReturnTaskRequest) returns (ReturnTaskResponse) {}
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse) {}
 
   rpc UpdateFlexletSpec(UpdateFlexletSpecRequest) returns (UpdateFlexletSpecResponse) {}
 }
 
 message WaitTaskRequest {
-  FlexletId id = 1;
+  FlexletId flexlet_id = 1;
 }
 
 message WaitTaskResponse {
@@ -39,20 +38,15 @@ message WaitTaskResponse {
 }
 
 message UpdateTaskRequest {
-  JobId id = 1;
+  TaskRef ref = 1;
 }
 
 message UpdateTaskResponse {}
 
-message ReturnTaskRequest {
-  JobId id = 1;
-}
-
-message ReturnTaskResponse {}
-
 message FinishTaskRequest {
-  JobId id = 1;
-  JobResult result = 2;
+  TaskRef ref = 1;
+  TaskResult result = 2;
+  bool need_retry = 3;
 }
 
 message FinishTaskResponse {}

@@ -39,13 +39,13 @@ func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 }
 
 func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
-	job, err := s.queue.WaitPendingJob(ctx, req.GetId())
+	ref, jobSpec, err := s.queue.WaitTask(ctx, req.GetFlexletId())
 	if err != nil {
 		return nil, err
 	}
 
 	var tpkgs []*flexletpb.TaskPackage
-	for _, jpkg := range job.GetSpec().GetInputs().GetPackages() {
+	for _, jpkg := range jobSpec.GetInputs().GetPackages() {
 		path := pathForPackage(jpkg.GetId().GetHash())
 		url, err := s.fs.PresignedURLForGet(ctx, path, preTaskTime)
 		if err != nil {
@@ -60,23 +60,23 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskReq
 		})
 	}
 
-	writeLimit := job.GetSpec().GetLimits().GetTime().AsDuration() + preTaskTime + postTaskTime
+	writeLimit := jobSpec.GetLimits().GetTime().AsDuration() + preTaskTime + postTaskTime
 
-	stdoutPath := pathForTask(job.GetId(), stdoutName)
+	stdoutPath := pathForTask(ref.GetTaskId(), stdoutName)
 	stdoutURL, err := s.fs.PresignedURLForPut(ctx, stdoutPath, writeLimit)
 	if err != nil {
 		return nil, err
 	}
-	stderrPath := pathForTask(job.GetId(), stderrName)
+	stderrPath := pathForTask(ref.GetTaskId(), stderrName)
 	stderrURL, err := s.fs.PresignedURLForPut(ctx, stderrPath, writeLimit)
 	if err != nil {
 		return nil, err
 	}
 
 	task := &flexletpb.Task{
-		Id: job.GetId(),
+		Ref: ref,
 		Spec: &flexletpb.TaskSpec{
-			Command: job.GetSpec().GetCommand(),
+			Command: jobSpec.GetCommand(),
 			Inputs:  &flexletpb.TaskInputs{Packages: tpkgs},
 			Outputs: &flexletpb.TaskOutputs{
 				Stdout: &flex.FileLocation{
@@ -88,22 +88,18 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskReq
 					PresignedUrl: stderrURL,
 				},
 			},
-			Limits: job.GetSpec().GetLimits(),
+			Limits: jobSpec.GetLimits(),
 		},
 	}
 	return &flexletpb.WaitTaskResponse{Task: task}, nil
 }
 
 func (s *flexletServer) UpdateTask(ctx context.Context, req *flexletpb.UpdateTaskRequest) (*flexletpb.UpdateTaskResponse, error) {
-	return &flexletpb.UpdateTaskResponse{}, s.meta.UpdateRunningJob(ctx, req.GetId())
-}
-
-func (s *flexletServer) ReturnTask(ctx context.Context, req *flexletpb.ReturnTaskRequest) (*flexletpb.ReturnTaskResponse, error) {
-	return &flexletpb.ReturnTaskResponse{}, s.meta.ReturnRunningJob(ctx, req.GetId())
+	return &flexletpb.UpdateTaskResponse{}, s.meta.UpdateTask(ctx, req.GetRef())
 }
 
 func (s *flexletServer) FinishTask(ctx context.Context, req *flexletpb.FinishTaskRequest) (*flexletpb.FinishTaskResponse, error) {
-	return &flexletpb.FinishTaskResponse{}, s.meta.FinishJob(ctx, req.GetId(), req.GetResult())
+	return &flexletpb.FinishTaskResponse{}, s.meta.FinishTask(ctx, req.GetRef(), req.GetResult(), req.GetNeedRetry())
 }
 
 func (s *flexletServer) UpdateFlexletSpec(ctx context.Context, req *flexletpb.UpdateFlexletSpecRequest) (*flexletpb.UpdateFlexletSpecResponse, error) {
