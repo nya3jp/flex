@@ -47,8 +47,8 @@ func main() {
 		}
 
 		app := &cli.App{
-			Name:  "flexhub",
-			Usage: "Flexhub",
+			Name:  "flexlet",
+			Usage: "Flexlet",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "name", Value: hostName, Usage: "Flexlet name"},
 				&cli.IntFlag{Name: "workers", Value: runtime.NumCPU(), Usage: "Number of workers"},
