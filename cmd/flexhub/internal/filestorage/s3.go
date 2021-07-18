@@ -35,7 +35,13 @@ type S3 struct {
 	baseURL *url.URL
 }
 
-func NewS3(ctx context.Context, baseURL string) (*S3, error) {
+func NewS3(ctx context.Context, baseURL string) (s *S3, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("setting up S3 access: %w", err)
+		}
+	}()
+
 	parsed, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
@@ -58,9 +64,14 @@ func NewS3(ctx context.Context, baseURL string) (*S3, error) {
 	}, nil
 }
 
-func (s *S3) Exists(ctx context.Context, path string) error {
+func (s *S3) Exists(ctx context.Context, path string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("checking: %w", err)
+		}
+	}()
 	fullPath := s.fullPath(path)
-	_, err := s.cl.HeadObject(ctx, &s3.HeadObjectInput{
+	_, err = s.cl.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: &s.baseURL.Host,
 		Key:    &fullPath,
 	})
@@ -71,9 +82,14 @@ func (s *S3) Exists(ctx context.Context, path string) error {
 	return err
 }
 
-func (s *S3) Put(ctx context.Context, path string, r io.ReadSeeker) error {
+func (s *S3) Put(ctx context.Context, path string, r io.ReadSeeker) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("uploading: %w", err)
+		}
+	}()
 	fullPath := s.fullPath(path)
-	_, err := s.cl.PutObject(ctx, &s3.PutObjectInput{
+	_, err = s.cl.PutObject(ctx, &s3.PutObjectInput{
 		Bucket: &s.baseURL.Host,
 		Key:    &fullPath,
 		Body:   r,
@@ -81,7 +97,12 @@ func (s *S3) Put(ctx context.Context, path string, r io.ReadSeeker) error {
 	return err
 }
 
-func (s *S3) PresignedURLForGet(ctx context.Context, path string, dur time.Duration) (string, error) {
+func (s *S3) PresignedURLForGet(ctx context.Context, path string, dur time.Duration) (url string, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("presigning: %w", err)
+		}
+	}()
 	fullPath := s.fullPath(path)
 	ps := s3.NewPresignClient(s.cl)
 	req, err := ps.PresignGetObject(ctx, &s3.GetObjectInput{
@@ -94,7 +115,12 @@ func (s *S3) PresignedURLForGet(ctx context.Context, path string, dur time.Durat
 	return req.URL, nil
 }
 
-func (s *S3) PresignedURLForPut(ctx context.Context, path string, dur time.Duration) (string, error) {
+func (s *S3) PresignedURLForPut(ctx context.Context, path string, dur time.Duration) (url string, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("presigning: %w", err)
+		}
+	}()
 	fullPath := s.fullPath(path)
 	ps := s3.NewPresignClient(s.cl)
 	req, err := ps.PresignPutObject(ctx, &s3.PutObjectInput{

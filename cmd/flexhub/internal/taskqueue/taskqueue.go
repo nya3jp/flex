@@ -16,6 +16,7 @@ package taskqueue
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/nya3jp/flex"
@@ -47,7 +48,7 @@ func (q *TaskQueue) WaitPendingJob(ctx context.Context, flexletID *flex.FlexletI
 
 	for {
 		job, err := q.meta.TakePendingJob(ctx, flexletID)
-		if err == database.ErrNoPendingTask {
+		if errors.Is(err, database.ErrNoPendingTask) {
 			ctxutil.Sleep(ctx, time.Second)
 			continue
 		}

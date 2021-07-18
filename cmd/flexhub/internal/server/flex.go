@@ -203,7 +203,13 @@ func (s *flexServer) ListTags(ctx context.Context, req *flex.ListTagsRequest) (*
 	return &flex.ListTagsResponse{Tags: ids}, nil
 }
 
-func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.PackageId) error {
+func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.PackageId) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("resolving package ID: %w", err)
+		}
+	}()
+
 	if tag := id.GetTag(); tag != "" {
 		hash, err := meta.LookupTag(ctx, tag)
 		if err != nil {

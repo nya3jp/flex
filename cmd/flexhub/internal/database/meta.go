@@ -41,7 +41,13 @@ func NewMetaStore(db *sql.DB) *MetaStore {
 	return &MetaStore{db: db}
 }
 
-func (m *MetaStore) InitTables(ctx context.Context) error {
+func (m *MetaStore) InitTables(ctx context.Context) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("initializing tables: %w", err)
+		}
+	}()
+
 	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return err
@@ -58,7 +64,13 @@ func (m *MetaStore) InitTables(ctx context.Context) error {
 	return tx.Commit()
 }
 
-func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (*flex.JobId, error) {
+func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id *flex.JobId, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("inserting a job: %w", err)
+		}
+	}()
+
 	priority := spec.GetConstraints().GetPriority()
 	req, err := proto.Marshal(spec)
 	if err != nil {
@@ -70,15 +82,21 @@ func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (*flex.Jo
 		return nil, err
 	}
 
-	id, err := result.LastInsertId()
+	intId, err := result.LastInsertId()
 	if err != nil {
 		return nil, err
 	}
 
-	return &flex.JobId{IntId: id}, nil
+	return &flex.JobId{IntId: intId}, nil
 }
 
-func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (*flex.JobStatus, error) {
+func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (status *flex.JobStatus, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("reading a job: %w", err)
+		}
+	}()
+
 	var stateStr string
 	var flexletPtr *string
 	var req, res []byte
@@ -113,7 +131,13 @@ func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (*flex.JobStatus
 	}, nil
 }
 
-func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.JobId, state flex.JobState) ([]*flex.JobStatus, error) {
+func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.JobId, state flex.JobState) (statuses []*flex.JobStatus, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("listing jobs: %w", err)
+		}
+	}()
+
 	b := beforeID.GetIntId()
 	if beforeID == nil {
 		b = math.MaxInt64
@@ -168,7 +192,13 @@ func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.Jo
 	return jobs, nil
 }
 
-func (m *MetaStore) TakePendingJob(ctx context.Context, flexletID *flex.FlexletId) (*flex.Job, error) {
+func (m *MetaStore) TakePendingJob(ctx context.Context, flexletID *flex.FlexletId) (job *flex.Job, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("taking a pending job: %w", err)
+		}
+	}()
+
 	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return nil, err
@@ -218,7 +248,13 @@ WHERE id = ?
 	}, nil
 }
 
-func (m *MetaStore) UpdateRunningJob(ctx context.Context, id *flex.JobId) error {
+func (m *MetaStore) UpdateRunningJob(ctx context.Context, id *flex.JobId) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("updating a running job: %w", err)
+		}
+	}()
+
 	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return err
@@ -240,7 +276,13 @@ WHERE id = ? AND state = 'RUNNING'
 	return nil
 }
 
-func (m *MetaStore) ReturnRunningJob(ctx context.Context, id *flex.JobId) error {
+func (m *MetaStore) ReturnRunningJob(ctx context.Context, id *flex.JobId) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("returning a job: %w", err)
+		}
+	}()
+
 	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return err
@@ -265,7 +307,13 @@ WHERE id = ? AND state = 'RUNNING'
 	return nil
 }
 
-func (m *MetaStore) FinishJob(ctx context.Context, id *flex.JobId, result *flex.JobResult) error {
+func (m *MetaStore) FinishJob(ctx context.Context, id *flex.JobId, result *flex.JobResult) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("finishing a job: %w", err)
+		}
+	}()
+
 	response, err := proto.Marshal(result)
 	if err != nil {
 		return err
@@ -295,7 +343,13 @@ WHERE id = ? AND state = 'RUNNING'
 	return nil
 }
 
-func (m *MetaStore) UpdateTag(ctx context.Context, tag, hash string) error {
+func (m *MetaStore) UpdateTag(ctx context.Context, tag, hash string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("updating a tag: %w", err)
+		}
+	}()
+
 	if !hashutil.IsStdHash(hash) {
 		return errors.New("invalid hash")
 	}
@@ -316,23 +370,32 @@ ON DUPLICATE KEY UPDATE hash = ?
 	return tx.Commit()
 }
 
-func (m *MetaStore) LookupTag(ctx context.Context, tag string) (string, error) {
+func (m *MetaStore) LookupTag(ctx context.Context, tag string) (hash string, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("looking up a tag: %w", err)
+		}
+	}()
 	row := m.db.QueryRowContext(ctx, `SELECT hash FROM tags WHERE tag = ?`, tag)
-	var hash string
 	if err := row.Scan(&hash); err != nil {
 		return "", err
 	}
 	return hash, nil
 }
 
-func (m *MetaStore) ListTags(ctx context.Context) ([]*flex.PackageId, error) {
+func (m *MetaStore) ListTags(ctx context.Context) (ids []*flex.PackageId, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("lsting tags: %w", err)
+		}
+	}()
+
 	rows, err := m.db.QueryContext(ctx, `SELECT tag, hash FROM tags ORDER BY tag ASC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var ids []*flex.PackageId
 	for rows.Next() {
 		var tag, hash string
 		if err := rows.Scan(&tag, &hash); err != nil {
