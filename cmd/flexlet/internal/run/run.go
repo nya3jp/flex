@@ -31,7 +31,7 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/filecache"
-	"github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/flexletpb"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -61,7 +61,7 @@ func New(storeDir string) (*Runner, error) {
 	}, nil
 }
 
-func (r *Runner) RunTask(ctx context.Context, spec *flexlet.TaskSpec) *flex.JobResult {
+func (r *Runner) RunTask(ctx context.Context, spec *flexletpb.TaskSpec) *flex.JobResult {
 	taskDir, err := ioutil.TempDir(r.tasksDir, "")
 	if err != nil {
 		return &flex.JobResult{
@@ -127,7 +127,7 @@ func (r *Runner) RunTask(ctx context.Context, spec *flexlet.TaskSpec) *flex.JobR
 	return result
 }
 
-func prepareInputs(ctx context.Context, execDir string, inputs *flexlet.TaskInputs, cache *filecache.Manager) error {
+func prepareInputs(ctx context.Context, execDir string, inputs *flexletpb.TaskInputs, cache *filecache.Manager) error {
 	for _, pkg := range inputs.GetPackages() {
 		if err := preparePackage(ctx, execDir, pkg, cache); err != nil {
 			return err
@@ -136,7 +136,7 @@ func prepareInputs(ctx context.Context, execDir string, inputs *flexlet.TaskInpu
 	return nil
 }
 
-func preparePackage(ctx context.Context, execDir string, pkg *flexlet.TaskPackage, cache *filecache.Manager) error {
+func preparePackage(ctx context.Context, execDir string, pkg *flexletpb.TaskPackage, cache *filecache.Manager) error {
 	extractDir := execDir
 	if dir := pkg.GetInstallDir(); dir != "" {
 		extractDir = filepath.Join(execDir, dir)
@@ -160,7 +160,7 @@ func preparePackage(ctx context.Context, execDir string, pkg *flexlet.TaskPackag
 	return nil
 }
 
-func uploadOutputs(ctx context.Context, outputs *flexlet.TaskOutputs, stdout, stderr *os.File) error {
+func uploadOutputs(ctx context.Context, outputs *flexletpb.TaskOutputs, stdout, stderr *os.File) error {
 	var firstErr error
 	if err := putLocation(ctx, outputs.GetStdout(), stdout); err != nil && firstErr == nil {
 		firstErr = err

@@ -22,10 +22,10 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	"github.com/nya3jp/flex/internal/ctxutil"
-	"github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/flexletpb"
 )
 
-func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, workers int) error {
+func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, workers int) error {
 	tokens := make(chan struct{}, workers)
 	for i := 0; i < workers; i++ {
 		tokens <- struct{}{}
@@ -43,7 +43,7 @@ func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runne
 			return ctx.Err()
 		}
 
-		res, err := cl.WaitTask(ctx, &flexlet.WaitTaskRequest{Id: flexletID})
+		res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{Id: flexletID})
 		if err != nil {
 			tokens <- struct{}{}
 			log.Printf("WARNING: WaitTask failed: %v", err)
@@ -59,18 +59,18 @@ func Run(ctx context.Context, cl flexlet.FlexletServiceClient, runner *run.Runne
 			log.Printf("INFO: Start task %d: %s", task.GetId().GetIntId(), task.GetSpec().String())
 			result := runner.RunTask(ctx, task.GetSpec())
 			log.Printf("INFO: End task %d", task.GetId().GetIntId())
-			if _, err := cl.FinishTask(ctx, &flexlet.FinishTaskRequest{Id: task.GetId(), Result: result}); err != nil {
+			if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Id: task.GetId(), Result: result}); err != nil {
 				log.Printf("WARNING: FinishTask failed: %v", err)
 			}
 		}()
 	}
 }
 
-func startUpdater(ctx context.Context, cl flexlet.FlexletServiceClient, id *flex.JobId) context.CancelFunc {
+func startUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, id *flex.JobId) context.CancelFunc {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		for {
-			_, _ = cl.UpdateTask(ctx, &flexlet.UpdateTaskRequest{Id: id})
+			_, _ = cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Id: id})
 			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
 				break
 			}

@@ -31,7 +31,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
-	"github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/flexletpb"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -50,11 +50,11 @@ func TestRunner_RunTask(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		spec *flexlet.TaskSpec
+		spec *flexletpb.TaskSpec
 		want *flex.JobResult
 	}{
 		{
-			spec: &flexlet.TaskSpec{
+			spec: &flexletpb.TaskSpec{
 				Command: &flex.JobCommand{Args: []string{"true"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
@@ -64,7 +64,7 @@ func TestRunner_RunTask(t *testing.T) {
 			},
 		},
 		{
-			spec: &flexlet.TaskSpec{
+			spec: &flexletpb.TaskSpec{
 				Command: &flex.JobCommand{Args: []string{"sh", "-c", "exit 28"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
@@ -74,7 +74,7 @@ func TestRunner_RunTask(t *testing.T) {
 			},
 		},
 		{
-			spec: &flexlet.TaskSpec{
+			spec: &flexletpb.TaskSpec{
 				Command: &flex.JobCommand{Args: []string{"sh", "-c", "kill -INT $$"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
@@ -84,7 +84,7 @@ func TestRunner_RunTask(t *testing.T) {
 			},
 		},
 		{
-			spec: &flexlet.TaskSpec{
+			spec: &flexletpb.TaskSpec{
 				Command: &flex.JobCommand{Args: []string{"sleep", "60"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Nanosecond)},
 			},
@@ -132,10 +132,10 @@ func TestRunner_RunTask_Inputs(t *testing.T) {
 	}
 	defer stdout.Close()
 
-	spec := &flexlet.TaskSpec{
+	spec := &flexletpb.TaskSpec{
 		Command: &flex.JobCommand{Args: []string{"find", "-s", "."}},
-		Inputs: &flexlet.TaskInputs{
-			Packages: []*flexlet.TaskPackage{
+		Inputs: &flexletpb.TaskInputs{
+			Packages: []*flexletpb.TaskPackage{
 				{
 					Location: &flex.FileLocation{
 						CanonicalUrl: server.URL + "/pkg1.tar.gz",
@@ -151,7 +151,7 @@ func TestRunner_RunTask_Inputs(t *testing.T) {
 				},
 			},
 		},
-		Outputs: &flexlet.TaskOutputs{
+		Outputs: &flexletpb.TaskOutputs{
 			Stdout: &flex.FileLocation{
 				CanonicalUrl: "file://" + stdout.Name(),
 				PresignedUrl: "file://" + stdout.Name(),
@@ -200,9 +200,9 @@ func TestRunner_RunTask_Outputs(t *testing.T) {
 	}
 	defer stderr.Close()
 
-	spec := &flexlet.TaskSpec{
+	spec := &flexletpb.TaskSpec{
 		Command: &flex.JobCommand{Args: []string{"sh", "-c", "echo foo; echo bar >&2"}},
-		Outputs: &flexlet.TaskOutputs{
+		Outputs: &flexletpb.TaskOutputs{
 			Stdout: &flex.FileLocation{
 				CanonicalUrl: "file://" + stdout.Name(),
 				PresignedUrl: "file://" + stdout.Name(),

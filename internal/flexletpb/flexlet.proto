@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package flex;
 
-option go_package = "github.com/nya3jp/flex/internal/flexlet";
+option go_package = "github.com/nya3jp/flex/internal/flexletpb";
 
 import "flex.proto";
 

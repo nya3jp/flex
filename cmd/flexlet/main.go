@@ -25,7 +25,7 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
-	flexlet2 "github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
@@ -72,7 +72,7 @@ func main() {
 				if err != nil {
 					return err
 				}
-				cl := flexlet2.NewFlexletServiceClient(cc)
+				cl := flexletpb.NewFlexletServiceClient(cc)
 
 				flexletID := &flex.FlexletId{Name: name}
 

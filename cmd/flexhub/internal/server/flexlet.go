@@ -20,11 +20,11 @@ import (
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/taskqueue"
-	"github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/flexletpb"
 )
 
 type flexletServer struct {
-	flexlet.UnimplementedFlexletServiceServer
+	flexletpb.UnimplementedFlexletServiceServer
 	meta  *database.MetaStore
 	fs    FS
 	queue *taskqueue.TaskQueue
@@ -38,20 +38,20 @@ func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 	}
 }
 
-func (s *flexletServer) WaitTask(ctx context.Context, req *flexlet.WaitTaskRequest) (*flexlet.WaitTaskResponse, error) {
+func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
 	job, err := s.queue.WaitPendingJob(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 
-	var tpkgs []*flexlet.TaskPackage
+	var tpkgs []*flexletpb.TaskPackage
 	for _, jpkg := range job.GetSpec().GetInputs().GetPackages() {
 		path := pathForPackage(jpkg.GetId().GetHash())
 		url, err := s.fs.PresignedURLForGet(ctx, path, preTaskTime)
 		if err != nil {
 			return nil, err
 		}
-		tpkgs = append(tpkgs, &flexlet.TaskPackage{
+		tpkgs = append(tpkgs, &flexletpb.TaskPackage{
 			Location: &flex.FileLocation{
 				CanonicalUrl: s.fs.CanonicalURL(path),
 				PresignedUrl: url,
@@ -73,12 +73,12 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexlet.WaitTaskReque
 		return nil, err
 	}
 
-	task := &flexlet.Task{
+	task := &flexletpb.Task{
 		Id: job.GetId(),
-		Spec: &flexlet.TaskSpec{
+		Spec: &flexletpb.TaskSpec{
 			Command: job.GetSpec().GetCommand(),
-			Inputs:  &flexlet.TaskInputs{Packages: tpkgs},
-			Outputs: &flexlet.TaskOutputs{
+			Inputs:  &flexletpb.TaskInputs{Packages: tpkgs},
+			Outputs: &flexletpb.TaskOutputs{
 				Stdout: &flex.FileLocation{
 					CanonicalUrl: s.fs.CanonicalURL(stdoutPath),
 					PresignedUrl: stdoutURL,
@@ -91,21 +91,21 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexlet.WaitTaskReque
 			Limits: job.GetSpec().GetLimits(),
 		},
 	}
-	return &flexlet.WaitTaskResponse{Task: task}, nil
+	return &flexletpb.WaitTaskResponse{Task: task}, nil
 }
 
-func (s *flexletServer) UpdateTask(ctx context.Context, req *flexlet.UpdateTaskRequest) (*flexlet.UpdateTaskResponse, error) {
-	return &flexlet.UpdateTaskResponse{}, s.meta.UpdateRunningJob(ctx, req.GetId())
+func (s *flexletServer) UpdateTask(ctx context.Context, req *flexletpb.UpdateTaskRequest) (*flexletpb.UpdateTaskResponse, error) {
+	return &flexletpb.UpdateTaskResponse{}, s.meta.UpdateRunningJob(ctx, req.GetId())
 }
 
-func (s *flexletServer) ReturnTask(ctx context.Context, req *flexlet.ReturnTaskRequest) (*flexlet.ReturnTaskResponse, error) {
-	return &flexlet.ReturnTaskResponse{}, s.meta.ReturnRunningJob(ctx, req.GetId())
+func (s *flexletServer) ReturnTask(ctx context.Context, req *flexletpb.ReturnTaskRequest) (*flexletpb.ReturnTaskResponse, error) {
+	return &flexletpb.ReturnTaskResponse{}, s.meta.ReturnRunningJob(ctx, req.GetId())
 }
 
-func (s *flexletServer) FinishTask(ctx context.Context, req *flexlet.FinishTaskRequest) (*flexlet.FinishTaskResponse, error) {
-	return &flexlet.FinishTaskResponse{}, s.meta.FinishJob(ctx, req.GetId(), req.GetResult())
+func (s *flexletServer) FinishTask(ctx context.Context, req *flexletpb.FinishTaskRequest) (*flexletpb.FinishTaskResponse, error) {
+	return &flexletpb.FinishTaskResponse{}, s.meta.FinishJob(ctx, req.GetId(), req.GetResult())
 }
 
-func (s *flexletServer) UpdateFlexletSpec(ctx context.Context, req *flexlet.UpdateFlexletSpecRequest) (*flexlet.UpdateFlexletSpecResponse, error) {
+func (s *flexletServer) UpdateFlexletSpec(ctx context.Context, req *flexletpb.UpdateFlexletSpecRequest) (*flexletpb.UpdateFlexletSpecResponse, error) {
 	panic("not implemented")
 }
