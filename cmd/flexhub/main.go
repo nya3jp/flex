@@ -38,6 +38,8 @@ func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
 		return nil, err
 	}
 	switch parsed.Scheme {
+	case "gs":
+		return filestorage.NewGS(ctx, fsURL)
 	case "s3":
 		return filestorage.NewS3(ctx, fsURL)
 	default:
