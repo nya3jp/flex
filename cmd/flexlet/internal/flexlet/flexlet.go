@@ -23,6 +23,8 @@ import (
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/flexletpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, workers int) error {
@@ -34,24 +36,17 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 	log.Printf("INFO: Flexlet start")
 
 	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
 		select {
 		case <-tokens:
 		case <-ctx.Done():
 			return ctx.Err()
 		}
 
-		res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{Id: flexletID})
+		task, err := waitTaskWithRetry(ctx, cl, flexletID)
 		if err != nil {
-			tokens <- struct{}{}
-			log.Printf("WARNING: WaitTask failed: %v", err)
-			ctxutil.Sleep(ctx, 10*time.Second)
-			continue
+			return err
 		}
 
-		task := res.GetTask()
 		go func() {
 			defer func() { tokens <- struct{}{} }()
 			stopUpdater := startUpdater(ctx, cl, task.GetId())
@@ -64,6 +59,33 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			}
 		}()
 	}
+}
+
+func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		task, err := waitTask(ctx, cl, flexletID)
+		if err == nil {
+			return task, nil
+		}
+		if s, ok := status.FromError(err); ok && s.Code() == codes.DeadlineExceeded {
+			continue
+		}
+		log.Printf("WARNING: WaitTask failed: %v", err)
+		ctxutil.Sleep(ctx, 10*time.Second)
+	}
+}
+
+func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
+	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{Id: flexletID})
+	if err != nil {
+		return nil, err
+	}
+	return res.GetTask(), nil
 }
 
 func startUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, id *flex.JobId) context.CancelFunc {
