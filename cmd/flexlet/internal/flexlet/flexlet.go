@@ -27,9 +27,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, workers int) error {
-	tokens := make(chan struct{}, workers)
-	for i := 0; i < workers; i++ {
+func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, cores int) error {
+	tokens := make(chan struct{}, cores)
+	for i := 0; i < cores; i++ {
 		tokens <- struct{}{}
 	}
 

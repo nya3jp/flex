@@ -51,14 +51,14 @@ func main() {
 			Usage: "Flexlet",
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "name", Value: hostName, Usage: "Flexlet name"},
-				&cli.IntFlag{Name: "workers", Value: runtime.NumCPU(), Usage: "Number of workers"},
+				&cli.IntFlag{Name: "cores", Value: runtime.NumCPU(), Usage: "Number of available cores"},
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
 				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 			},
 			Action: func(c *cli.Context) error {
 				name := c.String("name")
-				workers := c.Int("workers")
+				cores := c.Int("cores")
 				hubAddr := c.String("hub")
 				insecure := c.Bool("insecure")
 				storeDir := c.String("storedir")
@@ -76,7 +76,7 @@ func main() {
 
 				flexletID := &flex.FlexletId{Name: name}
 
-				return flexlet.Run(ctx, cl, runner, flexletID, workers)
+				return flexlet.Run(ctx, cl, runner, flexletID, cores)
 			},
 		}
 		return app.RunContext(ctx, os.Args)
