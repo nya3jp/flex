@@ -23,18 +23,32 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flex/internal/detar"
+	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/nya3jp/flex/internal/hashutil"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+var flagHub = &cli.StringFlag{
+	Name:    "hub",
+	Aliases: []string{"h"},
+	Value:   "localhost:7111",
+	Usage:   "Specifies a flexhub address in host:port format.",
+}
+
+var flagInsecure = &cli.BoolFlag{
+	Name:    "insecure",
+	Aliases: []string{"I"},
+	Usage:   "Allows insecure connections to flexhub servers.",
+}
+
 func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClient) error) error {
 	ctx := c.Context
-	hubAddr := c.String("hub")
+	hubAddr := c.String(flagHub.Name)
+	insecure := c.Bool(flagInsecure.Name)
 
-	cc, err := grpc.DialContext(ctx, hubAddr, grpc.WithInsecure())
+	cc, err := grpcutil.DialContext(ctx, hubAddr, insecure)
 	if err != nil {
 		return err
 	}

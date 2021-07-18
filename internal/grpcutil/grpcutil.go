@@ -12,38 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package grpcutil
 
 import (
 	"context"
-	"log"
-	"os"
+	"crypto/tls"
+	"crypto/x509"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-var app = &cli.App{
-	Name:  "flex",
-	Usage: "Flex CLI client",
-	Flags: []cli.Flag{
-		flagHub,
-		flagInsecure,
-	},
-	HideHelpCommand: true,
-	Commands: []*cli.Command{
-		cmdJob,
-		cmdPackage,
-	},
-}
+func DialContext(ctx context.Context, addr string, insecure bool) (*grpc.ClientConn, error) {
+	var opts []grpc.DialOption
+	if insecure {
+		opts = append(opts, grpc.WithAuthority(addr), grpc.WithInsecure())
+	} else {
+		pool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+		creds := credentials.NewTLS(&tls.Config{RootCAs: pool})
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	}
 
-func main() {
-	log.SetFlags(0)
-	cli.HelpFlag = &cli.BoolFlag{
-		Name:  "help",
-		Usage: "Shows help.",
-	}
-	if err := app.RunContext(context.Background(), os.Args); err != nil {
-		log.Fatalf("ERROR: %v", err)
-	}
+	return grpc.DialContext(ctx, addr, opts...)
 }

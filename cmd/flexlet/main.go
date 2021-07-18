@@ -26,9 +26,9 @@ import (
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	flexlet2 "github.com/nya3jp/flex/internal/flexlet"
+	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
 )
 
 func main() {
@@ -53,12 +53,14 @@ func main() {
 				&cli.StringFlag{Name: "name", Value: hostName, Usage: "Flexlet name"},
 				&cli.IntFlag{Name: "workers", Value: runtime.NumCPU(), Usage: "Number of workers"},
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
+				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 			},
 			Action: func(c *cli.Context) error {
 				name := c.String("name")
 				workers := c.Int("workers")
 				hubAddr := c.String("hub")
+				insecure := c.Bool("insecure")
 				storeDir := c.String("storedir")
 
 				runner, err := run.New(storeDir)
@@ -66,7 +68,7 @@ func main() {
 					return err
 				}
 
-				cc, err := grpc.DialContext(ctx, hubAddr, grpc.WithInsecure())
+				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure)
 				if err != nil {
 					return err
 				}
