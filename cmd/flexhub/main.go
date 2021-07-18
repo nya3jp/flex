@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
@@ -68,11 +69,16 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
 	defer cancel()
 
+	defaultPort := 7111
+	if port, err := strconv.Atoi(os.Getenv("PORT")); err == nil {
+		defaultPort = port
+	}
+
 	app := &cli.App{
 		Name:  "flexhub",
 		Usage: "Flexhub",
 		Flags: []cli.Flag{
-			&cli.IntFlag{Name: "port", Value: 7111, Usage: "TCP port to listen on"},
+			&cli.IntFlag{Name: "port", Value: defaultPort, Usage: "TCP port to listen on"},
 			&cli.StringFlag{Name: "db", Required: true, Usage: `DB URL (ex. "username:password@tcp(hostname:port)/database?parseTime=true")`},
 			&cli.StringFlag{Name: "fs", Required: true, Usage: "File storage URL"},
 		},
