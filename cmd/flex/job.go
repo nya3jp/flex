@@ -102,6 +102,7 @@ var cmdJob = &cli.Command{
 	Subcommands: []*cli.Command{
 		cmdJobCreate,
 		cmdJobWait,
+		cmdJobOutputs,
 		cmdJobInfo,
 		cmdJobList,
 	},
@@ -229,6 +230,30 @@ var cmdJobWait = &cli.Command{
 				if err := printJobOutputs(ctx, cl, id); err != nil {
 					return err
 				}
+			}
+			return nil
+		})
+	},
+}
+
+var cmdJobOutputs = &cli.Command{
+	Name:      "outputs",
+	Usage:     "Prints out job outputs",
+	ArgsUsage: "job-id",
+	Action: func(c *cli.Context) error {
+		if c.NArg() != 1 {
+			return cli.ShowSubcommandHelp(c)
+		}
+
+		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
+		if err != nil {
+			return err
+		}
+		id := &flex.JobId{IntId: intID}
+
+		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
+			if err := printJobOutputs(ctx, cl, id); err != nil {
+				return err
 			}
 			return nil
 		})
