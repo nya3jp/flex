@@ -72,7 +72,7 @@ var flagWait = &cli.BoolFlag{
 
 var flagOutputs = &cli.BoolFlag{
 	Name:  "outputs",
-	Usage: fmt.Sprintf("Prints task outputs to the console. --%s is required.", flagWait.Name),
+	Usage: "Prints task outputs to the console.",
 }
 
 var flagLimit = &cli.Int64Flag{
