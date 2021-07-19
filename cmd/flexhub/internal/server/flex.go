@@ -171,7 +171,7 @@ func (s *flexServer) GetPackage(ctx context.Context, req *flex.GetPackageRequest
 		return nil, err
 	}
 	err := s.fs.Exists(ctx, pathForPackage(id.GetHash()))
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return nil, status.Errorf(codes.NotFound, "package not found: %s: %v", id.GetHash(), err)
 	}
 	if err != nil {

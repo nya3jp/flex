@@ -111,7 +111,7 @@ func (g *GS) Exists(ctx context.Context, path string) (err error) {
 		}
 	}()
 	_, err = g.object(path).Attrs(ctx)
-	if err == storage.ErrObjectNotExist {
+	if errors.Is(err, storage.ErrObjectNotExist) {
 		return os.ErrNotExist
 	}
 	return err
