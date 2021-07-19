@@ -32,6 +32,7 @@ var app = &cli.App{
 	},
 	HideHelpCommand: true,
 	Commands: []*cli.Command{
+		cmdRun,
 		cmdJob,
 		cmdPackage,
 	},

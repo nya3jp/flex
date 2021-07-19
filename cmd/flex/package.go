@@ -51,7 +51,7 @@ var cmdPackageCreate = &cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() == 0 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
@@ -76,7 +76,7 @@ var cmdPackageTag = &cli.Command{
 	ArgsUsage: "tag hash",
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 2 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 		tag, hash := c.Args().Get(0), c.Args().Get(1)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
@@ -95,7 +95,7 @@ var cmdPackageInfo = &cli.Command{
 	ArgsUsage: "{hash|tag}",
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 		name := c.Args().Get(0)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
@@ -116,7 +116,7 @@ var cmdPackageList = &cli.Command{
 	ArgsUsage: "",
 	Action: func(c *cli.Context) error {
 		if c.NArg() > 0 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
 			res, err := cl.ListTags(ctx, &flex.ListTagsRequest{})

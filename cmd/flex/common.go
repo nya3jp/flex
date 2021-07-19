@@ -30,6 +30,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const exitCodeHelp = 2
+
 var flagHub = &cli.StringFlag{
 	Name:    "hub",
 	Aliases: []string{"h"},

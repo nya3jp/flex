@@ -64,17 +64,6 @@ var flagTimeLimit = &cli.DurationFlag{
 	Usage:   "Sets the time limit of the task.",
 }
 
-var flagWait = &cli.BoolFlag{
-	Name:    "wait",
-	Aliases: []string{"w"},
-	Usage:   "Waits until the task finishes.",
-}
-
-var flagOutputs = &cli.BoolFlag{
-	Name:  "outputs",
-	Usage: "Prints task outputs to the console.",
-}
-
 var flagLimit = &cli.Int64Flag{
 	Name:    "limit",
 	Aliases: []string{"n"},
@@ -95,6 +84,14 @@ var flagState = &cli.StringFlag{
 	Usage:   "Filters jobs by state. Allowed values are: pending, running, finished.",
 }
 
+var jobCreateFlags = []cli.Flag{
+	flagFile,
+	flagPackage,
+	flagShell,
+	flagTimeLimit,
+	flagPriority,
+}
+
 var cmdJob = &cli.Command{
 	Name:            "job",
 	Usage:           "Job-related subcommands.",
@@ -108,95 +105,48 @@ var cmdJob = &cli.Command{
 	},
 }
 
-var cmdJobCreate = &cli.Command{
-	Name:      "create",
-	Usage:     "Creates a new job.",
-	UsageText: "flex create [command options] executable [args...]\n   flex create [command options] -s command",
-	Flags: []cli.Flag{
-		flagFile,
-		flagPackage,
-		flagShell,
-		flagTimeLimit,
-		flagPriority,
-		flagWait,
-		flagOutputs,
-	},
+var cmdRun = &cli.Command{
+	Name:      "run",
+	Usage:     "Runs a job.",
+	UsageText: "flex run [command options] executable [args...]\n   flex run [command options] -s command",
+	Flags:     jobCreateFlags,
 	Action: func(c *cli.Context) error {
-		priority := c.Int(flagPriority.Name)
-		files := c.StringSlice(flagFile.Name)
-		packages := c.StringSlice(flagPackage.Name)
-		shell := c.Bool(flagShell.Name)
-		timeLimit := c.Duration(flagTimeLimit.Name)
-		wait := c.Bool(flagWait.Name)
-		outputs := c.Bool(flagOutputs.Name)
-
-		if outputs && !wait {
-			return fmt.Errorf("--%s required for --%s", flagWait.Name, flagOutputs.Name)
+		args, err := makeArgs(c)
+		if err != nil {
+			return err
 		}
-
-		var args []string
-		if shell {
-			if c.NArg() != 1 {
-				return cli.ShowSubcommandHelp(c)
-			}
-			args = []string{"sh", "-c", c.Args().Get(0)}
-		} else {
-			if c.NArg() == 0 {
-				return cli.ShowSubcommandHelp(c)
-			}
-			args = c.Args().Slice()
-		}
-
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			if len(files) > 0 {
-				hash, err := ensurePackage(ctx, cl, files)
-				if err != nil {
-					return err
-				}
-				packages = append(packages, hash)
-			}
-
-			var pkgs []*flex.JobPackage
-			for _, p := range packages {
-				pkgs = append(pkgs, &flex.JobPackage{Id: packageIDFor(p)})
-			}
-
-			spec := &flex.JobSpec{
-				Command: &flex.JobCommand{
-					Args: args,
-				},
-				Inputs: &flex.JobInputs{
-					Packages: pkgs,
-				},
-				Limits: &flex.JobLimits{
-					Time: durationpb.New(timeLimit),
-				},
-				Constraints: &flex.JobConstraints{
-					Priority: int32(priority),
-				},
-			}
-			res, err := cl.SubmitJob(ctx, &flex.SubmitJobRequest{Spec: spec})
+			id, err := submitJob(ctx, cl, c, args)
 			if err != nil {
 				return err
 			}
-
-			id := res.GetId()
-			log.Printf("Submitted job %d", id.GetIntId())
-
-			if !wait {
-				fmt.Println(id.GetIntId())
-				return nil
-			}
-
 			if err := waitJob(ctx, cl, id); err != nil {
 				return err
 			}
-
-			if outputs {
-				if err := printJobOutputs(ctx, cl, id); err != nil {
-					return err
-				}
+			if err := printJobOutputs(ctx, cl, id); err != nil {
+				return err
 			}
+			return nil
+		})
+	},
+}
+
+var cmdJobCreate = &cli.Command{
+	Name:      "create",
+	Usage:     "Creates a new job.",
+	UsageText: "flex job create [command options] executable [args...]\n   flex job create [command options] -s command",
+	Flags:     jobCreateFlags,
+	Action: func(c *cli.Context) error {
+		args, err := makeArgs(c)
+		if err != nil {
+			return err
+		}
+		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
+			id, err := submitJob(ctx, cl, c, args)
+			if err != nil {
+				return err
+			}
+			fmt.Println(id.GetIntId())
 			return nil
 		})
 	},
@@ -206,13 +156,9 @@ var cmdJobWait = &cli.Command{
 	Name:      "wait",
 	Usage:     "Waits a job.",
 	ArgsUsage: "job-id",
-	Flags: []cli.Flag{
-		flagOutputs,
-	},
 	Action: func(c *cli.Context) error {
-		outputs := c.Bool(flagOutputs.Name)
 		if c.NArg() != 1 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
 		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
@@ -226,11 +172,6 @@ var cmdJobWait = &cli.Command{
 			if err := waitJob(ctx, cl, id); err != nil {
 				return err
 			}
-			if outputs {
-				if err := printJobOutputs(ctx, cl, id); err != nil {
-					return err
-				}
-			}
 			return nil
 		})
 	},
@@ -242,7 +183,7 @@ var cmdJobOutputs = &cli.Command{
 	ArgsUsage: "job-id",
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
 		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
@@ -266,7 +207,7 @@ var cmdJobInfo = &cli.Command{
 	ArgsUsage: "job-id",
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
 		if err != nil {
@@ -301,7 +242,7 @@ var cmdJobList = &cli.Command{
 		before := c.Int64(flagBefore.Name)
 		stateStr := c.String(flagState.Name)
 		if c.NArg() > 0 {
-			return cli.ShowSubcommandHelp(c)
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
 		var state flex.JobState
@@ -336,6 +277,61 @@ var cmdJobList = &cli.Command{
 			return enc.Encode(jobs)
 		})
 	},
+}
+
+func makeArgs(c *cli.Context) ([]string, error) {
+	if c.Bool(flagShell.Name) {
+		if c.NArg() != 1 {
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
+		}
+		return []string{"sh", "-c", c.Args().Get(0)}, nil
+	}
+	if c.NArg() == 0 {
+		cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
+	}
+	return c.Args().Slice(), nil
+}
+
+func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, args []string) (*flex.JobId, error) {
+	priority := c.Int(flagPriority.Name)
+	files := c.StringSlice(flagFile.Name)
+	packages := c.StringSlice(flagPackage.Name)
+	timeLimit := c.Duration(flagTimeLimit.Name)
+
+	if len(files) > 0 {
+		hash, err := ensurePackage(ctx, cl, files)
+		if err != nil {
+			return nil, err
+		}
+		packages = append(packages, hash)
+	}
+
+	var pkgs []*flex.JobPackage
+	for _, p := range packages {
+		pkgs = append(pkgs, &flex.JobPackage{Id: packageIDFor(p)})
+	}
+
+	spec := &flex.JobSpec{
+		Command: &flex.JobCommand{
+			Args: args,
+		},
+		Inputs: &flex.JobInputs{
+			Packages: pkgs,
+		},
+		Limits: &flex.JobLimits{
+			Time: durationpb.New(timeLimit),
+		},
+		Constraints: &flex.JobConstraints{
+			Priority: int32(priority),
+		},
+	}
+	res, err := cl.SubmitJob(ctx, &flex.SubmitJobRequest{Spec: spec})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Submitted job %d", res.GetId().GetIntId())
+	return res.GetId(), nil
 }
 
 func waitJob(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId) error {
