@@ -51,7 +51,7 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			defer func() { tokens <- struct{}{} }()
 			stopUpdater := startUpdater(ctx, cl, task.GetRef())
 			defer stopUpdater()
-			log.Printf("INFO: Start task %s for job %d: %s", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId(), task.GetSpec().String())
+			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
 			result := runner.RunTask(ctx, task.GetSpec())
 			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
 			if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Ref: task.GetRef(), Result: result}); err != nil {
