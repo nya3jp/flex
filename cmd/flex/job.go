@@ -284,7 +284,7 @@ func makeArgs(c *cli.Context) ([]string, error) {
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
-		return []string{"sh", "-c", c.Args().Get(0)}, nil
+		return []string{"sh", "-e", "-c", c.Args().Get(0)}, nil
 	}
 	if c.NArg() == 0 {
 		cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)

@@ -65,7 +65,7 @@ func TestRunner_RunTask(t *testing.T) {
 		},
 		{
 			spec: &flexletpb.TaskSpec{
-				Command: &flex.JobCommand{Args: []string{"sh", "-c", "exit 28"}},
+				Command: &flex.JobCommand{Args: []string{"sh", "-e", "-c", "exit 28"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.TaskResult{
@@ -75,7 +75,7 @@ func TestRunner_RunTask(t *testing.T) {
 		},
 		{
 			spec: &flexletpb.TaskSpec{
-				Command: &flex.JobCommand{Args: []string{"sh", "-c", "kill -INT $$"}},
+				Command: &flex.JobCommand{Args: []string{"sh", "-e", "-c", "kill -INT $$"}},
 				Limits:  &flex.JobLimits{Time: durationpb.New(time.Minute)},
 			},
 			want: &flex.TaskResult{
@@ -133,7 +133,7 @@ func TestRunner_RunTask_Inputs(t *testing.T) {
 	defer stdout.Close()
 
 	spec := &flexletpb.TaskSpec{
-		Command: &flex.JobCommand{Args: []string{"sh", "-c", "find . | sort"}},
+		Command: &flex.JobCommand{Args: []string{"sh", "-e", "-c", "find . | sort"}},
 		Inputs: &flexletpb.TaskInputs{
 			Packages: []*flexletpb.TaskPackage{
 				{
@@ -201,7 +201,7 @@ func TestRunner_RunTask_Outputs(t *testing.T) {
 	defer stderr.Close()
 
 	spec := &flexletpb.TaskSpec{
-		Command: &flex.JobCommand{Args: []string{"sh", "-c", "echo foo; echo bar >&2"}},
+		Command: &flex.JobCommand{Args: []string{"sh", "-e", "-c", "echo foo; echo bar >&2"}},
 		Outputs: &flexletpb.TaskOutputs{
 			Stdout: &flex.FileLocation{
 				CanonicalUrl: "file://" + stdout.Name(),
