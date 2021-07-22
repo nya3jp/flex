@@ -66,6 +66,32 @@ func (m *MetaStore) InitTables(ctx context.Context) (err error) {
 	return tx.Commit()
 }
 
+func (m *MetaStore) Maintain(ctx context.Context) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("maintaining: %w", err)
+		}
+	}()
+
+	// Mark stale flexlets down.
+	if _, err := m.db.ExecContext(ctx, `
+UPDATE flexlets SET state = 'DOWN'
+WHERE state = 'UP' AND last_update < TIMESTAMPADD(MINUTE, -1, CURRENT_TIMESTAMP())
+`); err != nil {
+		return err
+	}
+
+	// Release stale jobs.
+	if _, err := m.db.ExecContext(ctx, `
+UPDATE jobs j INNER JOIN tasks t ON (j.task_uuid = t.uuid)
+SET j.state = 'PENDING', j.task_uuid = NULL
+WHERE j.state = 'RUNNING' AND t.last_update < TIMESTAMPADD(MINUTE, -1, CURRENT_TIMESTAMP())
+`); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id *flex.JobId, err error) {
 	defer func() {
 		if err != nil {
@@ -308,7 +334,7 @@ func (m *MetaStore) UpdateTask(ctx context.Context, ref *flexletpb.TaskRef) (err
 	if _, err := tx.ExecContext(ctx, `
 UPDATE tasks
 SET
-    last_update = NOW()
+    last_update = CURRENT_TIMESTAMP()
 WHERE uuid = ?
 `, ref.GetTaskId().GetUuid()); err != nil {
 		return err
@@ -357,8 +383,8 @@ UPDATE tasks
 SET
     state = 'FINISHED',
     response = ?,
-    finished = NOW(),
-    last_update = NOW()
+    finished = CURRENT_TIMESTAMP(),
+    last_update = CURRENT_TIMESTAMP()
 WHERE uuid = ? AND state = 'RUNNING'
 `, response, ref.GetTaskId().GetUuid()); err != nil {
 		return err
@@ -492,7 +518,7 @@ func (m *MetaStore) UpdateFlexlet(ctx context.Context, status *flex.FlexletStatu
 
 	if _, err := m.db.ExecContext(ctx, `
 INSERT INTO flexlets (name, state, data) VALUES (?, ?, ?)
-ON DUPLICATE KEY UPDATE state = ?, data = ?, last_update = NOW()
+ON DUPLICATE KEY UPDATE state = ?, data = ?, last_update = CURRENT_TIMESTAMP()
 `, status.GetFlexlet().GetId().GetName(), stateStr, data, stateStr, data); err != nil {
 		return err
 	}

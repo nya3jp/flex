@@ -23,11 +23,13 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/filestorage"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/server"
+	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
 )
@@ -60,6 +62,20 @@ func run(ctx context.Context, port int, dbURL, fsURL string) error {
 	if err := meta.InitTables(ctx); err != nil {
 		return err
 	}
+	if err := meta.Maintain(ctx); err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
+				return
+			}
+			if err := meta.Maintain(ctx); err != nil {
+				log.Printf("WARNING: Table maintainance failed: %v", err)
+			}
+		}
+	}()
 
 	fs, err := newFileSystem(ctx, fsURL)
 	if err != nil {
