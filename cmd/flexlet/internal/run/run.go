@@ -215,7 +215,7 @@ func putLocation(ctx context.Context, loc *flex.FileLocation, f io.ReadSeeker) e
 			return copyErr
 		}
 		return closeErr
-	case "gs", "s3":
+	case "gs", "s3", "http":
 		size, err := f.Seek(0, io.SeekEnd)
 		if err != nil {
 			return err
@@ -239,7 +239,7 @@ func putLocation(ctx context.Context, loc *flex.FileLocation, f io.ReadSeeker) e
 			return err
 		}
 		res.Body.Close()
-		if res.StatusCode != http.StatusOK {
+		if res.StatusCode/100 != 2 {
 			return errors.New(res.Status)
 		}
 		return nil

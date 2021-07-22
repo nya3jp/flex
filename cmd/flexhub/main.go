@@ -42,6 +42,8 @@ func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
 		return filestorage.NewGS(ctx, fsURL)
 	case "s3":
 		return filestorage.NewS3(ctx, fsURL)
+	case "http":
+		return filestorage.NewAnonymous(fsURL)
 	default:
 		return nil, fmt.Errorf("unknown filesystem scheme: %s", parsed.Scheme)
 	}
