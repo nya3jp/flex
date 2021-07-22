@@ -42,6 +42,11 @@ var templateJobs = template.Must(template.New("jobs.html").Funcs(funcs).ParseFS(
 var templateJob = template.Must(template.New("job.html").Funcs(funcs).ParseFS(templatesFS, "templates/job.html", "templates/base.html"))
 var templateFlexlets = template.Must(template.New("flexlets.html").Funcs(funcs).ParseFS(templatesFS, "templates/flexlets.html", "templates/base.html"))
 
+type indexValues struct {
+	Stats      *flex.Stats
+	TotalCores int64
+}
+
 type jobsValues struct {
 	Jobs            []*flex.JobStatus
 	NextBeforeJobID int64
@@ -97,7 +102,17 @@ type server struct {
 
 func (s *server) handleIndex(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	respond(w, r, func(ctx context.Context) error {
-		return renderHTML(w, templateIndex, nil)
+		res, err := s.cl.GetStats(ctx, &flex.GetStatsRequest{})
+		if err != nil {
+			return err
+		}
+
+		stats := res.GetStats()
+		values := &indexValues{
+			Stats:      stats,
+			TotalCores: stats.GetFlexlet().GetIdleCores() + stats.GetFlexlet().GetBusyCores(),
+		}
+		return renderHTML(w, templateIndex, values)
 	})
 }
 

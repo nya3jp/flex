@@ -122,3 +122,20 @@ message FileLocation {
 message TaskId {
   string uuid = 1;
 }
+
+message Stats {
+  JobStats job = 1;
+  FlexletStats flexlet = 2;
+}
+
+message JobStats {
+  int64 pending_jobs = 1;
+  int64 running_jobs = 2;
+}
+
+message FlexletStats {
+  int64 online_flexlets = 1;
+  int64 offline_flexlets = 2;
+  int64 busy_cores = 3;
+  int64 idle_cores = 4;
+}

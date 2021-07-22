@@ -34,6 +34,8 @@ service FlexService {
   rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {}
 
   rpc ListFlexlets(ListFlexletsRequest) returns (ListFlexletsResponse) {}
+
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {}
 }
 
 message SubmitJobRequest {
@@ -119,4 +121,10 @@ message ListFlexletsRequest {}
 
 message ListFlexletsResponse {
   repeated FlexletStatus flexlets = 1;
+}
+
+message GetStatsRequest {}
+
+message GetStatsResponse {
+  Stats stats = 1;
 }

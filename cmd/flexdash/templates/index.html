@@ -10,12 +10,30 @@ Home
   <table class="table table-sm table-borderless">
     <tbody>
     <tr>
-      <th scope="row">Cores</th>
-      <td>42 busy / 956 idle / 1000 total</td>
+      <th scope="row">Jobs</th>
+      <td>
+        {{ .Stats.GetJob.GetRunningJobs }} <span class="badge badge-warning">Running</span>
+        /
+        {{ .Stats.GetJob.GetPendingJobs }} <span class="badge badge-secondary">Pending</span>
+      </td>
     </tr>
     <tr>
-      <th scope="row">Jobs</th>
-      <td>42 running / 283 pending</td>
+      <th scope="row">Cores</th>
+      <td>
+        {{ .Stats.GetFlexlet.GetBusyCores }} <span class="badge badge-primary">Busy</span>
+        /
+        {{ .Stats.GetFlexlet.GetIdleCores }} <span class="badge badge-secondary">Idle</span>
+        /
+        {{ .TotalCores }} <span class="badge badge-success">Total</span>
+      </td>
+    </tr>
+    <tr>
+      <th scope="row">Flexlets</th>
+      <td>
+        {{ .Stats.GetFlexlet.GetOnlineFlexlets }} <span class="badge badge-primary">Online</span>
+        /
+        {{ .Stats.GetFlexlet.GetOfflineFlexlets }} <span class="badge badge-secondary">Offline</span>
+      </td>
     </tr>
     </tbody>
   </table>

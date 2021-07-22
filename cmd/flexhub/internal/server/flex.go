@@ -216,6 +216,14 @@ func (s *flexServer) ListFlexlets(ctx context.Context, req *flex.ListFlexletsReq
 	return &flex.ListFlexletsResponse{Flexlets: flexlets}, nil
 }
 
+func (s *flexServer) GetStats(ctx context.Context, req *flex.GetStatsRequest) (*flex.GetStatsResponse, error) {
+	stats, err := s.meta.GetStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &flex.GetStatsResponse{Stats: stats}, nil
+}
+
 func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.PackageId) (err error) {
 	defer func() {
 		if err != nil {

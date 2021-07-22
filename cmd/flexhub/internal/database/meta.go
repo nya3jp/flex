@@ -511,18 +511,63 @@ func (m *MetaStore) UpdateFlexlet(ctx context.Context, status *flex.FlexletStatu
 	}()
 
 	stateStr := formatFlexletState(status.GetState())
+	cores := status.GetFlexlet().GetSpec().GetCores()
 	data, err := proto.Marshal(status.GetFlexlet().GetSpec())
 	if err != nil {
 		return err
 	}
 
 	if _, err := m.db.ExecContext(ctx, `
-INSERT INTO flexlets (name, state, data) VALUES (?, ?, ?)
-ON DUPLICATE KEY UPDATE state = ?, data = ?, last_update = CURRENT_TIMESTAMP()
-`, status.GetFlexlet().GetId().GetName(), stateStr, data, stateStr, data); err != nil {
+INSERT INTO flexlets (name, state, cores, data) VALUES (?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE state = ?, cores = ?, data = ?, last_update = CURRENT_TIMESTAMP()
+`, status.GetFlexlet().GetId().GetName(), stateStr, cores, data, stateStr, cores, data); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (m *MetaStore) GetStats(ctx context.Context) (stats *flex.Stats, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("getting stats: %w", err)
+		}
+	}()
+
+	row := m.db.QueryRowContext(ctx, `
+SELECT
+    IFNULL(SUM(IF(state = 'PENDING', 1, 0)), 0),
+    IFNULL(SUM(IF(state = 'RUNNING', 1, 0)), 0)
+FROM jobs
+`)
+	var pendingJobs, runningJobs int64
+	if err := row.Scan(&pendingJobs, &runningJobs); err != nil {
+		return nil, err
+	}
+
+	row = m.db.QueryRowContext(ctx, `
+SELECT
+    IFNULL(SUM(IF(state = 'ONLINE', 1, 0)), 0),
+    IFNULL(SUM(IF(state = 'OFFLINE', 1, 0)), 0),
+    IFNULL(SUM(IF(state = 'ONLINE', cores, 0)), 0)
+FROM flexlets
+`)
+	var onlineFlexlets, offlineFlexlets, totalCores int64
+	if err := row.Scan(&onlineFlexlets, &offlineFlexlets, &totalCores); err != nil {
+		return nil, err
+	}
+
+	return &flex.Stats{
+		Job: &flex.JobStats{
+			PendingJobs: pendingJobs,
+			RunningJobs: runningJobs,
+		},
+		Flexlet: &flex.FlexletStats{
+			OnlineFlexlets:  onlineFlexlets,
+			OfflineFlexlets: offlineFlexlets,
+			BusyCores:       runningJobs,
+			IdleCores:       totalCores - runningJobs,
+		},
+	}, nil
 }
 
 func parseJobState(state string) (flex.JobState, error) {

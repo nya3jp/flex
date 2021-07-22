@@ -28,6 +28,7 @@ type FlexServiceClient interface {
 	UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...grpc.CallOption) (*UpdateTagResponse, error)
 	ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error)
 	ListFlexlets(ctx context.Context, in *ListFlexletsRequest, opts ...grpc.CallOption) (*ListFlexletsResponse, error)
+	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
 }
 
 type flexServiceClient struct {
@@ -153,6 +154,15 @@ func (c *flexServiceClient) ListFlexlets(ctx context.Context, in *ListFlexletsRe
 	return out, nil
 }
 
+func (c *flexServiceClient) GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error) {
+	out := new(GetStatsResponse)
+	err := c.cc.Invoke(ctx, "/flex.FlexService/GetStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FlexServiceServer is the server API for FlexService service.
 // All implementations must embed UnimplementedFlexServiceServer
 // for forward compatibility
@@ -167,6 +177,7 @@ type FlexServiceServer interface {
 	UpdateTag(context.Context, *UpdateTagRequest) (*UpdateTagResponse, error)
 	ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error)
 	ListFlexlets(context.Context, *ListFlexletsRequest) (*ListFlexletsResponse, error)
+	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
 	mustEmbedUnimplementedFlexServiceServer()
 }
 
@@ -203,6 +214,9 @@ func (UnimplementedFlexServiceServer) ListTags(context.Context, *ListTagsRequest
 }
 func (UnimplementedFlexServiceServer) ListFlexlets(context.Context, *ListFlexletsRequest) (*ListFlexletsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFlexlets not implemented")
+}
+func (UnimplementedFlexServiceServer) GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStats not implemented")
 }
 func (UnimplementedFlexServiceServer) mustEmbedUnimplementedFlexServiceServer() {}
 
@@ -405,6 +419,24 @@ func _FlexService_ListFlexlets_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FlexService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlexServiceServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/flex.FlexService/GetStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlexServiceServer).GetStats(ctx, req.(*GetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FlexService_ServiceDesc is the grpc.ServiceDesc for FlexService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -447,6 +479,10 @@ var FlexService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFlexlets",
 			Handler:    _FlexService_ListFlexlets_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _FlexService_GetStats_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
