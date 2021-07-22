@@ -1,0 +1,23 @@
+{{ template "base" . }}
+
+{{ define "title" -}}
+Home
+{{- end }}
+
+{{ define "main" -}}
+<div>
+  <h1 class="display-4">System Status</h1>
+  <table class="table table-sm table-borderless">
+    <tbody>
+    <tr>
+      <th scope="row">Cores</th>
+      <td>42 busy / 956 idle / 1000 total</td>
+    </tr>
+    <tr>
+      <th scope="row">Jobs</th>
+      <td>42 running / 283 pending</td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+{{ end -}}
