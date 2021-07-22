@@ -23,11 +23,11 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/alessio/shellescape"
 	"github.com/julienschmidt/httprouter"
 	"github.com/nya3jp/flex"
-	"golang.org/x/sync/errgroup"
 )
 
 //go:embed templates
@@ -53,8 +53,11 @@ type jobsValues struct {
 }
 
 type jobValues struct {
-	Job            *flex.JobStatus
-	Stdout, Stderr string
+	Job         *flex.JobStatus
+	Stdout      string
+	StdoutError string
+	Stderr      string
+	StderrError string
 }
 
 type flexletsValues struct {
@@ -156,28 +159,37 @@ func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.
 		}
 		job := res.GetJob()
 
-		var stdout, stderr string
+		var stdout, stdoutError, stderr, stderrError string
 		if job.GetState() == flex.JobState_FINISHED {
-			g, ctx := errgroup.WithContext(ctx)
-			g.Go(func() error {
-				var err error
-				stdout, err = readJobOutput(ctx, s.cl, jobID, flex.GetJobOutputRequest_STDOUT)
-				return err
-			})
-			g.Go(func() error {
-				var err error
-				stderr, err = readJobOutput(ctx, s.cl, jobID, flex.GetJobOutputRequest_STDERR)
-				return err
-			})
-			if err := g.Wait(); err != nil {
-				return err
-			}
+			var wg sync.WaitGroup
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				s, err := readJobOutput(ctx, s.cl, jobID, flex.GetJobOutputRequest_STDOUT)
+				if err != nil {
+					stdoutError = fmt.Sprintf("Failed to load stdout: %v", err)
+				} else {
+					stdout = s
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				s, err := readJobOutput(ctx, s.cl, jobID, flex.GetJobOutputRequest_STDERR)
+				if err != nil {
+					stderrError = fmt.Sprintf("Failed to load stderr: %v", err)
+				} else {
+					stderr = s
+				}
+			}()
+			wg.Wait()
 		}
 
 		values := &jobValues{
-			Job:    job,
-			Stdout: stdout,
-			Stderr: stderr,
+			Job:         job,
+			Stdout:      stdout,
+			StdoutError: stdoutError,
+			Stderr:      stderr,
+			StderrError: stderrError,
 		}
 		return renderHTML(w, templateJob, values)
 	})

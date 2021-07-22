@@ -80,14 +80,26 @@ Job {{ .Job.GetJob.GetId.GetIntId }}
 
   {{ if eq .Job.GetState.String "FINISHED" }}
   <h2 class="mt-3">Standard Output</h2>
+  {{ if eq .StdoutError "" }}
   <div class="card">
     <div class="card-body wrapped-code">{{ .Stdout }}</div>
   </div>
+  {{ else }}
+  <div class="alert alert-danger" role="alert">
+    {{ .StdoutError }}
+  </div>
+  {{ end }}
 
   <h2 class="mt-3">Standard Error</h2>
+  {{ if eq .StderrError "" }}
   <div class="card">
     <div class="card-body wrapped-code">{{ .Stderr }}</div>
   </div>
+  {{ else }}
+  <div class="alert alert-danger" role="alert">
+    {{ .StderrError }}
+  </div>
+  {{ end }}
   {{ end }}
 
 </div>
