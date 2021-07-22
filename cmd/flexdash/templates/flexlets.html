@@ -1,0 +1,56 @@
+{{ template "base" . }}
+
+{{ define "title" -}}
+Flexlets
+{{- end }}
+
+{{ define "main" -}}
+<style>
+  table.flexlets tr > *:nth-child(1) {
+    text-align: center;
+  }
+</style>
+<div>
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Flexlets</li>
+    </ol>
+  </nav>
+
+  <h1>Flexlets</h1>
+
+  <table class="table table-sm table-striped flexlets" style="table-layout: fixed">
+    <colgroup>
+      <col style="width: 6rem">
+      <col style="width: 12rem">
+      <col style="width: 4rem">
+      <col>
+    </colgroup>
+    <thead>
+    <tr>
+      <th scope="col">State</th>
+      <th scope="col">Name</th>
+      <th scope="col">Cores</th>
+      <th scope="col">Jobs</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Flexlets }}
+    <tr>
+      <td>
+        {{ if eq .GetState.String "UP" }}
+        <span class="badge badge-primary">Online</span>
+        {{ else }}
+        <span class="badge badge-secondary">Offline</span>
+        {{ end }}
+      </td>
+      <td class="text-ellipsis">{{ .GetFlexlet.GetId.GetName }}</td>
+      <td>{{ .GetFlexlet.GetSpec.GetCores }}</td>
+      <td></td>
+    </tr>
+    {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end -}}

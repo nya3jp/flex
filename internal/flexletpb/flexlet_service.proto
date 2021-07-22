@@ -26,7 +26,7 @@ service FlexletService {
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {}
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse) {}
 
-  rpc UpdateFlexletSpec(UpdateFlexletSpecRequest) returns (UpdateFlexletSpecResponse) {}
+  rpc UpdateFlexlet(UpdateFlexletRequest) returns (UpdateFlexletResponse) {}
 }
 
 message WaitTaskRequest {
@@ -51,9 +51,8 @@ message FinishTaskRequest {
 
 message FinishTaskResponse {}
 
-message UpdateFlexletSpecRequest {
-  FlexletId id = 1;
-  FlexletSpec spec = 2;
+message UpdateFlexletRequest {
+  FlexletStatus status = 1;
 }
 
-message UpdateFlexletSpecResponse {}
+message UpdateFlexletResponse {}

@@ -32,6 +32,8 @@ service FlexService {
 
   rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse) {}
   rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {}
+
+  rpc ListFlexlets(ListFlexletsRequest) returns (ListFlexletsResponse) {}
 }
 
 message SubmitJobRequest {
@@ -111,4 +113,10 @@ message ListTagsRequest {
 
 message ListTagsResponse {
   repeated PackageId tags = 1;
+}
+
+message ListFlexletsRequest {}
+
+message ListFlexletsResponse {
+  repeated FlexletStatus flexlets = 1;
 }

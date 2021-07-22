@@ -77,12 +77,27 @@ message PackageId {
 message PackageSpec {
 }
 
+message FlexletStatus {
+  Flexlet flexlet = 1;
+  FlexletState state = 2;
+}
+
+message Flexlet {
+  FlexletId id = 1;
+  FlexletSpec spec = 2;
+}
+
 message FlexletId {
   string name = 1;
 }
 
 message FlexletSpec {
   int64 cores = 1;
+}
+
+enum FlexletState {
+  DOWN = 0;
+  UP = 1;
 }
 
 message JobCommand {

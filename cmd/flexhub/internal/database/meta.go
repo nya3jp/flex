@@ -413,7 +413,7 @@ func (m *MetaStore) LookupTag(ctx context.Context, tag string) (hash string, err
 func (m *MetaStore) ListTags(ctx context.Context) (ids []*flex.PackageId, err error) {
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("lsting tags: %w", err)
+			err = fmt.Errorf("listing tags: %w", err)
 		}
 	}()
 
@@ -434,6 +434,69 @@ func (m *MetaStore) ListTags(ctx context.Context) (ids []*flex.PackageId, err er
 		})
 	}
 	return ids, nil
+}
+
+func (m *MetaStore) ListFlexlets(ctx context.Context) (statuses []*flex.FlexletStatus, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("listing flexlets: %w", err)
+		}
+	}()
+
+	rows, err := m.db.QueryContext(ctx, `SELECT name, state, data FROM flexlets ORDER BY name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name, stateStr string
+		var data []byte
+		if err := rows.Scan(&name, &stateStr, &data); err != nil {
+			return nil, err
+		}
+
+		state, err := parseFlexletState(stateStr)
+		if err != nil {
+			return nil, err
+		}
+
+		var spec flex.FlexletSpec
+		if err := proto.Unmarshal(data, &spec); err != nil {
+			return nil, err
+		}
+
+		statuses = append(statuses, &flex.FlexletStatus{
+			Flexlet: &flex.Flexlet{
+				Id:   &flex.FlexletId{Name: name},
+				Spec: &spec,
+			},
+			State: state,
+		})
+	}
+	return statuses, nil
+}
+
+func (m *MetaStore) UpdateFlexlet(ctx context.Context, status *flex.FlexletStatus) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("updating a flexlet: %w", err)
+		}
+	}()
+
+	stateStr := formatFlexletState(status.GetState())
+	data, err := proto.Marshal(status.GetFlexlet().GetSpec())
+	if err != nil {
+		return err
+	}
+
+	if _, err := m.db.ExecContext(ctx, `
+INSERT INTO flexlets (name, state, data) VALUES (?, ?, ?)
+ON DUPLICATE KEY UPDATE state = ?, data = ?, last_update = NOW()
+`, status.GetFlexlet().GetId().GetName(), stateStr, data, stateStr, data); err != nil {
+		return err
+	}
+	return nil
 }
 
 func parseJobState(state string) (flex.JobState, error) {
@@ -457,6 +520,28 @@ func formatJobState(state flex.JobState) string {
 		return "RUNNING"
 	case flex.JobState_FINISHED:
 		return "FINISHED"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+func parseFlexletState(state string) (flex.FlexletState, error) {
+	switch state {
+	case "DOWN":
+		return flex.FlexletState_DOWN, nil
+	case "UP":
+		return flex.FlexletState_UP, nil
+	default:
+		return flex.FlexletState_DOWN, fmt.Errorf("unknown flexlet state %s", state)
+	}
+}
+
+func formatFlexletState(state flex.FlexletState) string {
+	switch state {
+	case flex.FlexletState_DOWN:
+		return "DOWN"
+	case flex.FlexletState_UP:
+		return "UP"
 	default:
 		return "UNKNOWN"
 	}

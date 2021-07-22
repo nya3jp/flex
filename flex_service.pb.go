@@ -964,6 +964,91 @@ func (x *ListTagsResponse) GetTags() []*PackageId {
 	return nil
 }
 
+type ListFlexletsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ListFlexletsRequest) Reset() {
+	*x = ListFlexletsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_flex_service_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ListFlexletsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlexletsRequest) ProtoMessage() {}
+
+func (x *ListFlexletsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_flex_service_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlexletsRequest.ProtoReflect.Descriptor instead.
+func (*ListFlexletsRequest) Descriptor() ([]byte, []int) {
+	return file_flex_service_proto_rawDescGZIP(), []int{18}
+}
+
+type ListFlexletsResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Flexlets []*FlexletStatus `protobuf:"bytes,1,rep,name=flexlets,proto3" json:"flexlets,omitempty"`
+}
+
+func (x *ListFlexletsResponse) Reset() {
+	*x = ListFlexletsResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_flex_service_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ListFlexletsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlexletsResponse) ProtoMessage() {}
+
+func (x *ListFlexletsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_flex_service_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlexletsResponse.ProtoReflect.Descriptor instead.
+func (*ListFlexletsResponse) Descriptor() ([]byte, []int) {
+	return file_flex_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListFlexletsResponse) GetFlexlets() []*FlexletStatus {
+	if x != nil {
+		return x.Flexlets
+	}
+	return nil
+}
+
 var File_flex_service_proto protoreflect.FileDescriptor
 
 var file_flex_service_proto_rawDesc = []byte{
@@ -1038,7 +1123,13 @@ var file_flex_service_proto_rawDesc = []byte{
 	0x10, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x12, 0x23, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x49, 0x64,
-	0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x32, 0xd8, 0x04, 0x0a, 0x0b, 0x46, 0x6c, 0x65, 0x78, 0x53,
+	0x52, 0x04, 0x74, 0x61, 0x67, 0x73, 0x22, 0x15, 0x0a, 0x13, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x6c,
+	0x65, 0x78, 0x6c, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x47, 0x0a,
+	0x14, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2f, 0x0a, 0x08, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74,
+	0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46,
+	0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x08, 0x66, 0x6c,
+	0x65, 0x78, 0x6c, 0x65, 0x74, 0x73, 0x32, 0xa1, 0x05, 0x0a, 0x0b, 0x46, 0x6c, 0x65, 0x78, 0x53,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3e, 0x0a, 0x09, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74,
 	0x4a, 0x6f, 0x62, 0x12, 0x16, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x53, 0x75, 0x62, 0x6d, 0x69,
 	0x74, 0x4a, 0x6f, 0x62, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x66, 0x6c,
@@ -1076,9 +1167,13 @@ var file_flex_service_proto_rawDesc = []byte{
 	0x12, 0x15, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x61, 0x67, 0x73,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4c,
 	0x69, 0x73, 0x74, 0x54, 0x61, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x42, 0x18, 0x5a, 0x16, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x6e, 0x79, 0x61, 0x33, 0x6a, 0x70, 0x2f, 0x66, 0x6c, 0x65, 0x78, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x00, 0x12, 0x47, 0x0a, 0x0c, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74,
+	0x73, 0x12, 0x19, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x6c, 0x65,
+	0x78, 0x6c, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x66,
+	0x6c, 0x65, 0x78, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x18, 0x5a, 0x16, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x79, 0x61, 0x33, 0x6a, 0x70, 0x2f,
+	0x66, 0x6c, 0x65, 0x78, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1094,7 +1189,7 @@ func file_flex_service_proto_rawDescGZIP() []byte {
 }
 
 var file_flex_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_flex_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_flex_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_flex_service_proto_goTypes = []interface{}{
 	(GetJobOutputRequest_JobOutputType)(0), // 0: flex.GetJobOutputRequest.JobOutputType
 	(*SubmitJobRequest)(nil),               // 1: flex.SubmitJobRequest
@@ -1115,55 +1210,61 @@ var file_flex_service_proto_goTypes = []interface{}{
 	(*UpdateTagResponse)(nil),              // 16: flex.UpdateTagResponse
 	(*ListTagsRequest)(nil),                // 17: flex.ListTagsRequest
 	(*ListTagsResponse)(nil),               // 18: flex.ListTagsResponse
-	(*JobSpec)(nil),                        // 19: flex.JobSpec
-	(*JobId)(nil),                          // 20: flex.JobId
-	(*JobStatus)(nil),                      // 21: flex.JobStatus
-	(*FileLocation)(nil),                   // 22: flex.FileLocation
-	(JobState)(0),                          // 23: flex.JobState
-	(*PackageSpec)(nil),                    // 24: flex.PackageSpec
-	(*PackageId)(nil),                      // 25: flex.PackageId
-	(*Package)(nil),                        // 26: flex.Package
+	(*ListFlexletsRequest)(nil),            // 19: flex.ListFlexletsRequest
+	(*ListFlexletsResponse)(nil),           // 20: flex.ListFlexletsResponse
+	(*JobSpec)(nil),                        // 21: flex.JobSpec
+	(*JobId)(nil),                          // 22: flex.JobId
+	(*JobStatus)(nil),                      // 23: flex.JobStatus
+	(*FileLocation)(nil),                   // 24: flex.FileLocation
+	(JobState)(0),                          // 25: flex.JobState
+	(*PackageSpec)(nil),                    // 26: flex.PackageSpec
+	(*PackageId)(nil),                      // 27: flex.PackageId
+	(*Package)(nil),                        // 28: flex.Package
+	(*FlexletStatus)(nil),                  // 29: flex.FlexletStatus
 }
 var file_flex_service_proto_depIdxs = []int32{
-	19, // 0: flex.SubmitJobRequest.spec:type_name -> flex.JobSpec
-	20, // 1: flex.SubmitJobResponse.id:type_name -> flex.JobId
-	20, // 2: flex.CancelJobRequest.id:type_name -> flex.JobId
-	20, // 3: flex.GetJobRequest.id:type_name -> flex.JobId
-	21, // 4: flex.GetJobResponse.job:type_name -> flex.JobStatus
-	20, // 5: flex.GetJobOutputRequest.id:type_name -> flex.JobId
+	21, // 0: flex.SubmitJobRequest.spec:type_name -> flex.JobSpec
+	22, // 1: flex.SubmitJobResponse.id:type_name -> flex.JobId
+	22, // 2: flex.CancelJobRequest.id:type_name -> flex.JobId
+	22, // 3: flex.GetJobRequest.id:type_name -> flex.JobId
+	23, // 4: flex.GetJobResponse.job:type_name -> flex.JobStatus
+	22, // 5: flex.GetJobOutputRequest.id:type_name -> flex.JobId
 	0,  // 6: flex.GetJobOutputRequest.type:type_name -> flex.GetJobOutputRequest.JobOutputType
-	22, // 7: flex.GetJobOutputResponse.location:type_name -> flex.FileLocation
-	20, // 8: flex.ListJobsRequest.before_id:type_name -> flex.JobId
-	23, // 9: flex.ListJobsRequest.state:type_name -> flex.JobState
-	21, // 10: flex.ListJobsResponse.jobs:type_name -> flex.JobStatus
-	24, // 11: flex.InsertPackageRequest.spec:type_name -> flex.PackageSpec
-	25, // 12: flex.InsertPackageResponse.id:type_name -> flex.PackageId
-	25, // 13: flex.GetPackageRequest.id:type_name -> flex.PackageId
-	26, // 14: flex.GetPackageResponse.package:type_name -> flex.Package
-	25, // 15: flex.ListTagsResponse.tags:type_name -> flex.PackageId
-	1,  // 16: flex.FlexService.SubmitJob:input_type -> flex.SubmitJobRequest
-	3,  // 17: flex.FlexService.CancelJob:input_type -> flex.CancelJobRequest
-	5,  // 18: flex.FlexService.GetJob:input_type -> flex.GetJobRequest
-	7,  // 19: flex.FlexService.GetJobOutput:input_type -> flex.GetJobOutputRequest
-	9,  // 20: flex.FlexService.ListJobs:input_type -> flex.ListJobsRequest
-	11, // 21: flex.FlexService.InsertPackage:input_type -> flex.InsertPackageRequest
-	13, // 22: flex.FlexService.GetPackage:input_type -> flex.GetPackageRequest
-	15, // 23: flex.FlexService.UpdateTag:input_type -> flex.UpdateTagRequest
-	17, // 24: flex.FlexService.ListTags:input_type -> flex.ListTagsRequest
-	2,  // 25: flex.FlexService.SubmitJob:output_type -> flex.SubmitJobResponse
-	4,  // 26: flex.FlexService.CancelJob:output_type -> flex.CancelJobResponse
-	6,  // 27: flex.FlexService.GetJob:output_type -> flex.GetJobResponse
-	8,  // 28: flex.FlexService.GetJobOutput:output_type -> flex.GetJobOutputResponse
-	10, // 29: flex.FlexService.ListJobs:output_type -> flex.ListJobsResponse
-	12, // 30: flex.FlexService.InsertPackage:output_type -> flex.InsertPackageResponse
-	14, // 31: flex.FlexService.GetPackage:output_type -> flex.GetPackageResponse
-	16, // 32: flex.FlexService.UpdateTag:output_type -> flex.UpdateTagResponse
-	18, // 33: flex.FlexService.ListTags:output_type -> flex.ListTagsResponse
-	25, // [25:34] is the sub-list for method output_type
-	16, // [16:25] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	24, // 7: flex.GetJobOutputResponse.location:type_name -> flex.FileLocation
+	22, // 8: flex.ListJobsRequest.before_id:type_name -> flex.JobId
+	25, // 9: flex.ListJobsRequest.state:type_name -> flex.JobState
+	23, // 10: flex.ListJobsResponse.jobs:type_name -> flex.JobStatus
+	26, // 11: flex.InsertPackageRequest.spec:type_name -> flex.PackageSpec
+	27, // 12: flex.InsertPackageResponse.id:type_name -> flex.PackageId
+	27, // 13: flex.GetPackageRequest.id:type_name -> flex.PackageId
+	28, // 14: flex.GetPackageResponse.package:type_name -> flex.Package
+	27, // 15: flex.ListTagsResponse.tags:type_name -> flex.PackageId
+	29, // 16: flex.ListFlexletsResponse.flexlets:type_name -> flex.FlexletStatus
+	1,  // 17: flex.FlexService.SubmitJob:input_type -> flex.SubmitJobRequest
+	3,  // 18: flex.FlexService.CancelJob:input_type -> flex.CancelJobRequest
+	5,  // 19: flex.FlexService.GetJob:input_type -> flex.GetJobRequest
+	7,  // 20: flex.FlexService.GetJobOutput:input_type -> flex.GetJobOutputRequest
+	9,  // 21: flex.FlexService.ListJobs:input_type -> flex.ListJobsRequest
+	11, // 22: flex.FlexService.InsertPackage:input_type -> flex.InsertPackageRequest
+	13, // 23: flex.FlexService.GetPackage:input_type -> flex.GetPackageRequest
+	15, // 24: flex.FlexService.UpdateTag:input_type -> flex.UpdateTagRequest
+	17, // 25: flex.FlexService.ListTags:input_type -> flex.ListTagsRequest
+	19, // 26: flex.FlexService.ListFlexlets:input_type -> flex.ListFlexletsRequest
+	2,  // 27: flex.FlexService.SubmitJob:output_type -> flex.SubmitJobResponse
+	4,  // 28: flex.FlexService.CancelJob:output_type -> flex.CancelJobResponse
+	6,  // 29: flex.FlexService.GetJob:output_type -> flex.GetJobResponse
+	8,  // 30: flex.FlexService.GetJobOutput:output_type -> flex.GetJobOutputResponse
+	10, // 31: flex.FlexService.ListJobs:output_type -> flex.ListJobsResponse
+	12, // 32: flex.FlexService.InsertPackage:output_type -> flex.InsertPackageResponse
+	14, // 33: flex.FlexService.GetPackage:output_type -> flex.GetPackageResponse
+	16, // 34: flex.FlexService.UpdateTag:output_type -> flex.UpdateTagResponse
+	18, // 35: flex.FlexService.ListTags:output_type -> flex.ListTagsResponse
+	20, // 36: flex.FlexService.ListFlexlets:output_type -> flex.ListFlexletsResponse
+	27, // [27:37] is the sub-list for method output_type
+	17, // [17:27] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_flex_service_proto_init() }
@@ -1389,6 +1490,30 @@ func file_flex_service_proto_init() {
 				return nil
 			}
 		}
+		file_flex_service_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListFlexletsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_flex_service_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListFlexletsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_flex_service_proto_msgTypes[10].OneofWrappers = []interface{}{
 		(*InsertPackageRequest_Spec)(nil),
@@ -1400,7 +1525,7 @@ func file_flex_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_flex_service_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

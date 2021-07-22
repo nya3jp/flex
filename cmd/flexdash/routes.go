@@ -40,6 +40,7 @@ var funcs = template.FuncMap{
 var templateIndex = template.Must(template.New("index.html").Funcs(funcs).ParseFS(templatesFS, "templates/index.html", "templates/base.html"))
 var templateJobs = template.Must(template.New("jobs.html").Funcs(funcs).ParseFS(templatesFS, "templates/jobs.html", "templates/base.html"))
 var templateJob = template.Must(template.New("job.html").Funcs(funcs).ParseFS(templatesFS, "templates/job.html", "templates/base.html"))
+var templateFlexlets = template.Must(template.New("flexlets.html").Funcs(funcs).ParseFS(templatesFS, "templates/flexlets.html", "templates/base.html"))
 
 type jobsValues struct {
 	Jobs            []*flex.JobStatus
@@ -49,6 +50,10 @@ type jobsValues struct {
 type jobValues struct {
 	Job            *flex.JobStatus
 	Stdout, Stderr string
+}
+
+type flexletsValues struct {
+	Flexlets []*flex.FlexletStatus
 }
 
 func respond(w http.ResponseWriter, r *http.Request, f func(ctx context.Context) error) {
@@ -163,11 +168,26 @@ func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.
 	})
 }
 
+func (s *server) handleFlexlets(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	respond(w, r, func(ctx context.Context) error {
+		res, err := s.cl.ListFlexlets(ctx, &flex.ListFlexletsRequest{})
+		if err != nil {
+			return err
+		}
+
+		values := &flexletsValues{
+			Flexlets: res.GetFlexlets(),
+		}
+		return renderHTML(w, templateFlexlets, values)
+	})
+}
+
 func newRouter(cl flex.FlexServiceClient) *httprouter.Router {
 	srv := &server{cl: cl}
 	router := httprouter.New()
 	router.GET("/", srv.handleIndex)
 	router.GET("/jobs/", srv.handleJobs)
 	router.GET("/jobs/:jobID/", srv.handleJob)
+	router.GET("/flexlets/", srv.handleFlexlets)
 	return router
 }

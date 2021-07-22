@@ -102,6 +102,6 @@ func (s *flexletServer) FinishTask(ctx context.Context, req *flexletpb.FinishTas
 	return &flexletpb.FinishTaskResponse{}, s.meta.FinishTask(ctx, req.GetRef(), req.GetResult(), req.GetNeedRetry())
 }
 
-func (s *flexletServer) UpdateFlexletSpec(ctx context.Context, req *flexletpb.UpdateFlexletSpecRequest) (*flexletpb.UpdateFlexletSpecResponse, error) {
-	panic("not implemented")
+func (s *flexletServer) UpdateFlexlet(ctx context.Context, req *flexletpb.UpdateFlexletRequest) (*flexletpb.UpdateFlexletResponse, error) {
+	return &flexletpb.UpdateFlexletResponse{}, s.meta.UpdateFlexlet(ctx, req.GetStatus())
 }

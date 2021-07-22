@@ -208,6 +208,14 @@ func (s *flexServer) ListTags(ctx context.Context, req *flex.ListTagsRequest) (*
 	return &flex.ListTagsResponse{Tags: ids}, nil
 }
 
+func (s *flexServer) ListFlexlets(ctx context.Context, req *flex.ListFlexletsRequest) (*flex.ListFlexletsResponse, error) {
+	flexlets, err := s.meta.ListFlexlets(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &flex.ListFlexletsResponse{Flexlets: flexlets}, nil
+}
+
 func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.PackageId) (err error) {
 	defer func() {
 		if err != nil {

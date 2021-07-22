@@ -27,11 +27,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, flexletID *flex.FlexletId, cores int) error {
+func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, id *flex.FlexletId, cores int) error {
 	tokens := make(chan struct{}, cores)
 	for i := 0; i < cores; i++ {
 		tokens <- struct{}{}
 	}
+
+	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Id: id, Spec: &flex.FlexletSpec{Cores: int64(cores)}})
+	defer stop()
 
 	log.Printf("INFO: Flexlet start")
 
@@ -42,15 +45,15 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			return ctx.Err()
 		}
 
-		task, err := waitTaskWithRetry(ctx, cl, flexletID)
+		task, err := waitTaskWithRetry(ctx, cl, id)
 		if err != nil {
 			return err
 		}
 
 		go func() {
 			defer func() { tokens <- struct{}{} }()
-			stopUpdater := startUpdater(ctx, cl, task.GetRef())
-			defer stopUpdater()
+			stop := startTaskUpdater(ctx, cl, task.GetRef())
+			defer stop()
 			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
 			result := runner.RunTask(ctx, task.GetSpec())
 			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
@@ -59,6 +62,25 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			}
 		}()
 	}
+}
+
+func startFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, flexlet *flex.Flexlet) context.CancelFunc {
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		for {
+			status := &flex.FlexletStatus{
+				Flexlet: flexlet,
+				State:   flex.FlexletState_UP,
+			}
+			if _, err := cl.UpdateFlexlet(ctx, &flexletpb.UpdateFlexletRequest{Status: status}); err != nil && ctx.Err() == nil {
+				log.Printf("WARNING: UpdateTasklet failed: %v", err)
+			}
+			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
+				break
+			}
+		}
+	}()
+	return cancel
 }
 
 func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
@@ -88,11 +110,13 @@ func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID 
 	return res.GetTask(), nil
 }
 
-func startUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, ref *flexletpb.TaskRef) context.CancelFunc {
+func startTaskUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, ref *flexletpb.TaskRef) context.CancelFunc {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		for {
-			_, _ = cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Ref: ref})
+			if _, err := cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Ref: ref}); err != nil && ctx.Err() == nil {
+				log.Printf("WARNING: UpdateTask failed: %v", err)
+			}
 			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
 				break
 			}

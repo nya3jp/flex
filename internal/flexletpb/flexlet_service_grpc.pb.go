@@ -21,7 +21,7 @@ type FlexletServiceClient interface {
 	WaitTask(ctx context.Context, in *WaitTaskRequest, opts ...grpc.CallOption) (*WaitTaskResponse, error)
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
 	FinishTask(ctx context.Context, in *FinishTaskRequest, opts ...grpc.CallOption) (*FinishTaskResponse, error)
-	UpdateFlexletSpec(ctx context.Context, in *UpdateFlexletSpecRequest, opts ...grpc.CallOption) (*UpdateFlexletSpecResponse, error)
+	UpdateFlexlet(ctx context.Context, in *UpdateFlexletRequest, opts ...grpc.CallOption) (*UpdateFlexletResponse, error)
 }
 
 type flexletServiceClient struct {
@@ -59,9 +59,9 @@ func (c *flexletServiceClient) FinishTask(ctx context.Context, in *FinishTaskReq
 	return out, nil
 }
 
-func (c *flexletServiceClient) UpdateFlexletSpec(ctx context.Context, in *UpdateFlexletSpecRequest, opts ...grpc.CallOption) (*UpdateFlexletSpecResponse, error) {
-	out := new(UpdateFlexletSpecResponse)
-	err := c.cc.Invoke(ctx, "/flex.FlexletService/UpdateFlexletSpec", in, out, opts...)
+func (c *flexletServiceClient) UpdateFlexlet(ctx context.Context, in *UpdateFlexletRequest, opts ...grpc.CallOption) (*UpdateFlexletResponse, error) {
+	out := new(UpdateFlexletResponse)
+	err := c.cc.Invoke(ctx, "/flex.FlexletService/UpdateFlexlet", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ type FlexletServiceServer interface {
 	WaitTask(context.Context, *WaitTaskRequest) (*WaitTaskResponse, error)
 	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
 	FinishTask(context.Context, *FinishTaskRequest) (*FinishTaskResponse, error)
-	UpdateFlexletSpec(context.Context, *UpdateFlexletSpecRequest) (*UpdateFlexletSpecResponse, error)
+	UpdateFlexlet(context.Context, *UpdateFlexletRequest) (*UpdateFlexletResponse, error)
 	mustEmbedUnimplementedFlexletServiceServer()
 }
 
@@ -92,8 +92,8 @@ func (UnimplementedFlexletServiceServer) UpdateTask(context.Context, *UpdateTask
 func (UnimplementedFlexletServiceServer) FinishTask(context.Context, *FinishTaskRequest) (*FinishTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FinishTask not implemented")
 }
-func (UnimplementedFlexletServiceServer) UpdateFlexletSpec(context.Context, *UpdateFlexletSpecRequest) (*UpdateFlexletSpecResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateFlexletSpec not implemented")
+func (UnimplementedFlexletServiceServer) UpdateFlexlet(context.Context, *UpdateFlexletRequest) (*UpdateFlexletResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateFlexlet not implemented")
 }
 func (UnimplementedFlexletServiceServer) mustEmbedUnimplementedFlexletServiceServer() {}
 
@@ -162,20 +162,20 @@ func _FlexletService_FinishTask_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FlexletService_UpdateFlexletSpec_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateFlexletSpecRequest)
+func _FlexletService_UpdateFlexlet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateFlexletRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FlexletServiceServer).UpdateFlexletSpec(ctx, in)
+		return srv.(FlexletServiceServer).UpdateFlexlet(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/flex.FlexletService/UpdateFlexletSpec",
+		FullMethod: "/flex.FlexletService/UpdateFlexlet",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FlexletServiceServer).UpdateFlexletSpec(ctx, req.(*UpdateFlexletSpecRequest))
+		return srv.(FlexletServiceServer).UpdateFlexlet(ctx, req.(*UpdateFlexletRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -200,8 +200,8 @@ var FlexletService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FlexletService_FinishTask_Handler,
 		},
 		{
-			MethodName: "UpdateFlexletSpec",
-			Handler:    _FlexletService_UpdateFlexletSpec_Handler,
+			MethodName: "UpdateFlexlet",
+			Handler:    _FlexletService_UpdateFlexlet_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
