@@ -133,7 +133,7 @@ func TestRunner_RunTask_Inputs(t *testing.T) {
 	defer stdout.Close()
 
 	spec := &flexletpb.TaskSpec{
-		Command: &flex.JobCommand{Args: []string{"find", "-s", "."}},
+		Command: &flex.JobCommand{Args: []string{"sh", "-c", "find . | sort"}},
 		Inputs: &flexletpb.TaskInputs{
 			Packages: []*flexletpb.TaskPackage{
 				{
