@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -28,6 +29,7 @@ import (
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/sys/unix"
 )
 
@@ -55,6 +57,7 @@ func main() {
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
 				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
+				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
 			},
 			Action: func(c *cli.Context) error {
 				name := c.String("name")
@@ -62,6 +65,7 @@ func main() {
 				hubAddr := c.String("hub")
 				insecure := c.Bool("insecure")
 				storeDir := c.String("storedir")
+				replicas := c.Int("replicas-for-load-testing")
 
 				runner, err := run.New(storeDir)
 				if err != nil {
@@ -74,9 +78,17 @@ func main() {
 				}
 				cl := flexletpb.NewFlexletServiceClient(cc)
 
-				flexletID := &flex.FlexletId{Name: name}
-
-				return flexlet.Run(ctx, cl, runner, flexletID, cores)
+				grp, ctx := errgroup.WithContext(ctx)
+				for i := 0; i < replicas; i++ {
+					flexletID := &flex.FlexletId{Name: name}
+					if replicas > 1 {
+						flexletID.Name += fmt.Sprintf(".%d", i)
+					}
+					grp.Go(func() error {
+						return flexlet.Run(ctx, cl, runner, flexletID, cores)
+					})
+				}
+				return grp.Wait()
 			},
 		}
 		return app.RunContext(ctx, os.Args)
