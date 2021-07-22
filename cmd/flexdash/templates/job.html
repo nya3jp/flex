@@ -18,13 +18,13 @@ Job {{ .Job.GetJob.GetId.GetIntId }}
     Job {{ .Job.GetJob.GetId.GetIntId }}
 
     {{ if eq .Job.GetState.String "PENDING" }}
-    <span class="badge badge-secondary" style="font-size: 0.75rem">Pending</span>
+    <span class="badge bg-secondary" style="font-size: 0.75rem">Pending</span>
     {{ else if eq .Job.GetState.String "RUNNING" }}
-    <span class="badge badge-warning" style="font-size: 0.75rem">Running</span>
+    <span class="badge bg-warning" style="font-size: 0.75rem">Running</span>
     {{ else if eq .Job.GetResult.GetExitCode 0 }}
-    <span class="badge badge-success" style="font-size: 0.75rem">Success</span>
+    <span class="badge bg-success" style="font-size: 0.75rem">Success</span>
     {{ else }}
-    <span class="badge badge-danger" style="font-size: 0.75rem">Failure</span>
+    <span class="badge bg-danger" style="font-size: 0.75rem">Failure</span>
     {{ end }}
   </h1>
 

@@ -12,27 +12,27 @@ Home
     <tr>
       <th scope="row">Jobs</th>
       <td>
-        {{ .Stats.GetJob.GetRunningJobs }} <span class="badge badge-warning">Running</span>
+        {{ .Stats.GetJob.GetRunningJobs }} <span class="badge bg-warning">Running</span>
         /
-        {{ .Stats.GetJob.GetPendingJobs }} <span class="badge badge-secondary">Pending</span>
+        {{ .Stats.GetJob.GetPendingJobs }} <span class="badge bg-secondary">Pending</span>
       </td>
     </tr>
     <tr>
       <th scope="row">Cores</th>
       <td>
-        {{ .Stats.GetFlexlet.GetBusyCores }} <span class="badge badge-primary">Busy</span>
+        {{ .Stats.GetFlexlet.GetBusyCores }} <span class="badge bg-primary">Busy</span>
         /
-        {{ .Stats.GetFlexlet.GetIdleCores }} <span class="badge badge-secondary">Idle</span>
+        {{ .Stats.GetFlexlet.GetIdleCores }} <span class="badge bg-secondary">Idle</span>
         /
-        {{ .TotalCores }} <span class="badge badge-success">Total</span>
+        {{ .TotalCores }} <span class="badge bg-success">Total</span>
       </td>
     </tr>
     <tr>
       <th scope="row">Flexlets</th>
       <td>
-        {{ .Stats.GetFlexlet.GetOnlineFlexlets }} <span class="badge badge-primary">Online</span>
+        {{ .Stats.GetFlexlet.GetOnlineFlexlets }} <span class="badge bg-primary">Online</span>
         /
-        {{ .Stats.GetFlexlet.GetOfflineFlexlets }} <span class="badge badge-secondary">Offline</span>
+        {{ .Stats.GetFlexlet.GetOfflineFlexlets }} <span class="badge bg-secondary">Offline</span>
       </td>
     </tr>
     </tbody>

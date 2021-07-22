@@ -40,9 +40,9 @@ Flexlets
     <tr>
       <td>
         {{ if eq .GetState.String "ONLINE" }}
-        <span class="badge badge-primary">Online</span>
+        <span class="badge bg-primary">Online</span>
         {{ else }}
-        <span class="badge badge-secondary">Offline</span>
+        <span class="badge bg-secondary">Offline</span>
         {{ end }}
       </td>
       <td class="text-ellipsis">{{ .GetFlexlet.GetId.GetName }}</td>
