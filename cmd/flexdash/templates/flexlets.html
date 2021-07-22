@@ -39,7 +39,7 @@ Flexlets
     {{ range .Flexlets }}
     <tr>
       <td>
-        {{ if eq .GetState.String "UP" }}
+        {{ if eq .GetState.String "ONLINE" }}
         <span class="badge badge-primary">Online</span>
         {{ else }}
         <span class="badge badge-secondary">Offline</span>

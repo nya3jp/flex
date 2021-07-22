@@ -70,7 +70,7 @@ func startFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient,
 		for {
 			status := &flex.FlexletStatus{
 				Flexlet: flexlet,
-				State:   flex.FlexletState_UP,
+				State:   flex.FlexletState_ONLINE,
 			}
 			if _, err := cl.UpdateFlexlet(ctx, &flexletpb.UpdateFlexletRequest{Status: status}); err != nil && ctx.Err() == nil {
 				log.Printf("WARNING: UpdateTasklet failed: %v", err)

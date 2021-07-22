@@ -75,8 +75,8 @@ func (m *MetaStore) Maintain(ctx context.Context) (err error) {
 
 	// Mark stale flexlets down.
 	if _, err := m.db.ExecContext(ctx, `
-UPDATE flexlets SET state = 'DOWN'
-WHERE state = 'UP' AND last_update < TIMESTAMPADD(MINUTE, -1, CURRENT_TIMESTAMP())
+UPDATE flexlets SET state = 'OFFLINE'
+WHERE state = 'ONLINE' AND last_update < TIMESTAMPADD(MINUTE, -1, CURRENT_TIMESTAMP())
 `); err != nil {
 		return err
 	}
@@ -553,21 +553,21 @@ func formatJobState(state flex.JobState) string {
 
 func parseFlexletState(state string) (flex.FlexletState, error) {
 	switch state {
-	case "DOWN":
-		return flex.FlexletState_DOWN, nil
-	case "UP":
-		return flex.FlexletState_UP, nil
+	case "OFFLINE":
+		return flex.FlexletState_OFFLINE, nil
+	case "ONLINE":
+		return flex.FlexletState_ONLINE, nil
 	default:
-		return flex.FlexletState_DOWN, fmt.Errorf("unknown flexlet state %s", state)
+		return flex.FlexletState_OFFLINE, fmt.Errorf("unknown flexlet state %s", state)
 	}
 }
 
 func formatFlexletState(state flex.FlexletState) string {
 	switch state {
-	case flex.FlexletState_DOWN:
-		return "DOWN"
-	case flex.FlexletState_UP:
-		return "UP"
+	case flex.FlexletState_OFFLINE:
+		return "OFFLINE"
+	case flex.FlexletState_ONLINE:
+		return "ONLINE"
 	default:
 		return "UNKNOWN"
 	}

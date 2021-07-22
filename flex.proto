@@ -96,8 +96,8 @@ message FlexletSpec {
 }
 
 enum FlexletState {
-  DOWN = 0;
-  UP = 1;
+  OFFLINE = 0;
+  ONLINE = 1;
 }
 
 message JobCommand {
