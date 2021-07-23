@@ -42,17 +42,32 @@ var templateJobs = template.Must(template.New("jobs.html").Funcs(funcs).ParseFS(
 var templateJob = template.Must(template.New("job.html").Funcs(funcs).ParseFS(templatesFS, "templates/job.html", "templates/base.html"))
 var templateFlexlets = template.Must(template.New("flexlets.html").Funcs(funcs).ParseFS(templatesFS, "templates/flexlets.html", "templates/base.html"))
 
+type section string
+
+const (
+	sectionIndex    section = "index"
+	sectionJobs     section = "jobs"
+	sectionFlexlets section = "flexlets"
+)
+
+type baseValues struct {
+	Section section
+}
+
 type indexValues struct {
+	Base       baseValues
 	Stats      *flex.Stats
 	TotalCores int64
 }
 
 type jobsValues struct {
+	Base            baseValues
 	Jobs            []*flex.JobStatus
 	NextBeforeJobID int64
 }
 
 type jobValues struct {
+	Base        baseValues
 	Job         *flex.JobStatus
 	Stdout      string
 	StdoutError string
@@ -61,6 +76,7 @@ type jobValues struct {
 }
 
 type flexletsValues struct {
+	Base     baseValues
 	Flexlets []*flex.FlexletStatus
 }
 
@@ -112,6 +128,7 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request, p httproute
 
 		stats := res.GetStats()
 		values := &indexValues{
+			Base:       baseValues{Section: sectionIndex},
 			Stats:      stats,
 			TotalCores: stats.GetFlexlet().GetIdleCores() + stats.GetFlexlet().GetBusyCores(),
 		}
@@ -138,6 +155,7 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 			nextBeforeJobID = jobs[len(jobs)-1].GetJob().GetId().GetIntId()
 		}
 		values := &jobsValues{
+			Base:            baseValues{Section: sectionJobs},
 			Jobs:            jobs,
 			NextBeforeJobID: nextBeforeJobID,
 		}
@@ -185,6 +203,7 @@ func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.
 		}
 
 		values := &jobValues{
+			Base:        baseValues{Section: sectionJobs},
 			Job:         job,
 			Stdout:      stdout,
 			StdoutError: stdoutError,
@@ -203,6 +222,7 @@ func (s *server) handleFlexlets(w http.ResponseWriter, r *http.Request, p httpro
 		}
 
 		values := &flexletsValues{
+			Base:     baseValues{Section: sectionFlexlets},
 			Flexlets: res.GetFlexlets(),
 		}
 		return renderHTML(w, templateFlexlets, values)

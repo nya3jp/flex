@@ -5,102 +5,92 @@ Job {{ .Job.GetJob.GetId.GetIntId }}
 {{- end }}
 
 {{ define "main" -}}
-<div>
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
-      <li class="breadcrumb-item"><a href="/jobs/">Jobs</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Job {{ .Job.GetJob.GetId.GetIntId }}</li>
-    </ol>
-  </nav>
+<h1>
+  Job {{ .Job.GetJob.GetId.GetIntId }}
 
-  <h1>
-    Job {{ .Job.GetJob.GetId.GetIntId }}
+  {{ if eq .Job.GetState.String "PENDING" }}
+  <span class="badge bg-secondary" style="font-size: 0.75rem">Pending</span>
+  {{ else if eq .Job.GetState.String "RUNNING" }}
+  <span class="badge bg-warning" style="font-size: 0.75rem">Running</span>
+  {{ else if eq .Job.GetResult.GetExitCode 0 }}
+  <span class="badge bg-success" style="font-size: 0.75rem">Success</span>
+  {{ else }}
+  <span class="badge bg-danger" style="font-size: 0.75rem">Failure</span>
+  {{ end }}
+</h1>
 
-    {{ if eq .Job.GetState.String "PENDING" }}
-    <span class="badge bg-secondary" style="font-size: 0.75rem">Pending</span>
-    {{ else if eq .Job.GetState.String "RUNNING" }}
-    <span class="badge bg-warning" style="font-size: 0.75rem">Running</span>
-    {{ else if eq .Job.GetResult.GetExitCode 0 }}
-    <span class="badge bg-success" style="font-size: 0.75rem">Success</span>
-    {{ else }}
-    <span class="badge bg-danger" style="font-size: 0.75rem">Failure</span>
-    {{ end }}
-  </h1>
-
-  <table class="table table-sm" style="table-layout: fixed">
-    <colgroup>
-      <col style="width: 6rem">
-      <col>
-    </colgroup>
-    <tbody>
-    <tr>
-      <th scope="row">ID</th>
-      <td>{{ .Job.GetJob.GetId.GetIntId }}</td>
-    </tr>
-    <tr>
-      <th scope="row">Command</th>
-      <td class="command">{{ .Job.GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</td>
-    </tr>
-    <tr>
-      <th scope="row">Packages</th>
-      <td>
-        {{ if gt (.Job.GetJob.GetSpec.GetInputs.GetPackages | len) 0 }}
-        <ul class="list-unstyled mb-0">
-          {{ range .Job.GetJob.GetSpec.GetInputs.GetPackages }}
-          <li>
-            {{ .GetId.GetHash }}
-            {{ if .GetId.GetTag }}
-            (<a href="/packages/{{ .GetId.GetTag }}/">{{ .GetId.GetTag }}</a>)
-            {{ end }}
-          </li>
+<table class="table table-sm" style="table-layout: fixed">
+  <colgroup>
+    <col style="width: 6rem">
+    <col>
+  </colgroup>
+  <tbody>
+  <tr>
+    <th scope="row">ID</th>
+    <td>{{ .Job.GetJob.GetId.GetIntId }}</td>
+  </tr>
+  <tr>
+    <th scope="row">Command</th>
+    <td class="command">{{ .Job.GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</td>
+  </tr>
+  <tr>
+    <th scope="row">Packages</th>
+    <td>
+      {{ if gt (.Job.GetJob.GetSpec.GetInputs.GetPackages | len) 0 }}
+      <ul class="list-unstyled mb-0">
+        {{ range .Job.GetJob.GetSpec.GetInputs.GetPackages }}
+        <li>
+          {{ .GetId.GetHash }}
+          {{ if .GetId.GetTag }}
+          (<a href="/packages/{{ .GetId.GetTag }}/">{{ .GetId.GetTag }}</a>)
           {{ end }}
-        </ul>
-        {{ else }}
-        (No package)
+        </li>
         {{ end }}
-      </td>
-    </tr>
-    {{ if eq .Job.GetState.String "FINISHED" }}
-    <tr>
-      <th scope="row">Result</th>
-      <td>
-        {{ .Job.GetResult.GetMessage }}
-      </td>
-    </tr>
-    <tr>
-      <th scope="row">Run time</th>
-      <td>
-        {{ .Job.GetResult.GetTime.AsDuration }}
-      </td>
-    </tr>
-    {{ end }}
-    </tbody>
-  </table>
-
+      </ul>
+      {{ else }}
+      (No package)
+      {{ end }}
+    </td>
+  </tr>
   {{ if eq .Job.GetState.String "FINISHED" }}
-  <h2 class="mt-3">Standard Output</h2>
-  {{ if eq .StdoutError "" }}
-  <div class="card">
-    <div class="card-body wrapped-code">{{ .Stdout }}</div>
-  </div>
-  {{ else }}
-  <div class="alert alert-danger" role="alert">
-    {{ .StdoutError }}
-  </div>
+  <tr>
+    <th scope="row">Result</th>
+    <td>
+      {{ .Job.GetResult.GetMessage }}
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">Run time</th>
+    <td>
+      {{ .Job.GetResult.GetTime.AsDuration }}
+    </td>
+  </tr>
   {{ end }}
+  </tbody>
+</table>
 
-  <h2 class="mt-3">Standard Error</h2>
-  {{ if eq .StderrError "" }}
-  <div class="card">
-    <div class="card-body wrapped-code">{{ .Stderr }}</div>
-  </div>
-  {{ else }}
-  <div class="alert alert-danger" role="alert">
-    {{ .StderrError }}
-  </div>
-  {{ end }}
-  {{ end }}
-
+{{ if eq .Job.GetState.String "FINISHED" }}
+<h2 class="mt-3">Standard Output</h2>
+{{ if eq .StdoutError "" }}
+<div class="card">
+  <div class="card-body wrapped-code">{{ .Stdout }}</div>
 </div>
+{{ else }}
+<div class="alert alert-danger" role="alert">
+  {{ .StdoutError }}
+</div>
+{{ end }}
+
+<h2 class="mt-3">Standard Error</h2>
+{{ if eq .StderrError "" }}
+<div class="card">
+  <div class="card-body wrapped-code">{{ .Stderr }}</div>
+</div>
+{{ else }}
+<div class="alert alert-danger" role="alert">
+  {{ .StderrError }}
+</div>
+{{ end }}
+{{ end }}
+
 {{ end -}}

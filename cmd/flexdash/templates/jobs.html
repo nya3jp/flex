@@ -13,51 +13,44 @@ Jobs
     text-align: center;
   }
 </style>
-<div>
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/">Home</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Jobs</li>
-    </ol>
-  </nav>
 
-  <h1>Jobs</h1>
+<h1>Jobs</h1>
 
-  <table class="table table-sm table-striped jobs" style="table-layout: fixed">
-    <colgroup>
-      <col style="width: 6rem">
-      <col style="width: 6rem">
-      <col>
-    </colgroup>
-    <thead>
-    <tr>
-      <th scope="col">ID</th>
-      <th scope="col">Status</th>
-      <th scope="col">Command</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{ range .Jobs }}
-    <tr>
-      <td><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetId.GetIntId }}</a></td>
-      <td>
-        {{ if eq .GetState.String "PENDING" }}
-        <span class="badge bg-secondary">Pending</span>
-        {{ else if eq .GetState.String "RUNNING" }}
-        <span class="badge bg-warning">Running</span>
-        {{ else if eq .GetResult.GetExitCode 0 }}
-        <span class="badge bg-success">Success</span>
-        {{ else }}
-        <span class="badge bg-danger">Failure</span>
-        {{ end }}
-      </td>
-      <td class="command"><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</a></td>
-    </tr>
-    {{ end }}
-    </tbody>
-  </table>
-  {{ if gt .NextBeforeJobID 1 }}
-  <p style="text-align: right"><a href="/jobs/?before={{ .NextBeforeJobID }}">Older &raquo;</a></p>
+<table class="table table-sm table-striped jobs" style="table-layout: fixed">
+  <colgroup>
+    <col style="width: 6rem">
+    <col style="width: 6rem">
+    <col>
+  </colgroup>
+  <thead>
+  <tr>
+    <th scope="col">ID</th>
+    <th scope="col">Status</th>
+    <th scope="col">Command</th>
+  </tr>
+  </thead>
+  <tbody>
+  {{ range .Jobs }}
+  <tr>
+    <td><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetId.GetIntId }}</a></td>
+    <td>
+      {{ if eq .GetState.String "PENDING" }}
+      <span class="badge bg-secondary">Pending</span>
+      {{ else if eq .GetState.String "RUNNING" }}
+      <span class="badge bg-warning">Running</span>
+      {{ else if eq .GetResult.GetExitCode 0 }}
+      <span class="badge bg-success">Success</span>
+      {{ else }}
+      <span class="badge bg-danger">Failure</span>
+      {{ end }}
+    </td>
+    <td class="command"><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</a></td>
+  </tr>
   {{ end }}
-</div>
+  </tbody>
+</table>
+{{ if gt .NextBeforeJobID 1 }}
+<p style="text-align: right"><a href="/jobs/?before={{ .NextBeforeJobID }}">Older &raquo;</a></p>
+{{ end }}
+
 {{ end -}}
