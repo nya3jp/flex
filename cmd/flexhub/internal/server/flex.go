@@ -71,7 +71,7 @@ func (s *flexServer) SubmitJob(ctx context.Context, req *flex.SubmitJobRequest) 
 }
 
 func (s *flexServer) CancelJob(ctx context.Context, req *flex.CancelJobRequest) (*flex.CancelJobResponse, error) {
-	panic("not implemented")
+	return nil, errors.New("not implemented")
 }
 
 func (s *flexServer) GetJob(ctx context.Context, req *flex.GetJobRequest) (*flex.GetJobResponse, error) {
