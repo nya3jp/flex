@@ -25,16 +25,18 @@ import (
 
 type flexletServer struct {
 	flexletpb.UnimplementedFlexletServiceServer
+	*authMixin
 	meta  *database.MetaStore
 	fs    FS
 	queue *taskqueue.TaskQueue
 }
 
-func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
+func newFlexletServer(meta *database.MetaStore, fs FS, password string) *flexletServer {
 	return &flexletServer{
-		meta:  meta,
-		fs:    fs,
-		queue: taskqueue.New(meta),
+		authMixin: newAuthMixin(password),
+		meta:      meta,
+		fs:        fs,
+		queue:     taskqueue.New(meta),
 	}
 }
 

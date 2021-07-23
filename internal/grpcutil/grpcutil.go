@@ -18,12 +18,26 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
+	"os"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func DialContext(ctx context.Context, addr string, insecure bool) (*grpc.ClientConn, error) {
+func DialContext(ctx context.Context, addr string, insecure bool, password, passwordFile string) (*grpc.ClientConn, error) {
+	if password != "" && passwordFile != "" {
+		return nil, errors.New("duplicated password flags")
+	}
+	if passwordFile != "" {
+		b, err := os.ReadFile(passwordFile)
+		if err != nil {
+			return nil, err
+		}
+		password = strings.TrimSpace(string(b))
+	}
+
 	var opts []grpc.DialOption
 	if insecure {
 		opts = append(opts, grpc.WithAuthority(addr), grpc.WithInsecure())
@@ -36,5 +50,21 @@ func DialContext(ctx context.Context, addr string, insecure bool) (*grpc.ClientC
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	}
 
+	if password != "" {
+		opts = append(opts, grpc.WithPerRPCCredentials(&passwordCredentials{password}))
+	}
+
 	return grpc.DialContext(ctx, addr, opts...)
+}
+
+type passwordCredentials struct {
+	password string
+}
+
+func (c *passwordCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+	return map[string]string{"authorization": "Bearer " + c.password}, nil
+}
+
+func (c *passwordCredentials) RequireTransportSecurity() bool {
+	return false
 }

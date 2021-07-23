@@ -29,6 +29,8 @@ var app = &cli.App{
 	Flags: []cli.Flag{
 		flagHub,
 		flagInsecure,
+		flagPassword,
+		flagPasswordFromFile,
 	},
 	HideHelpCommand: true,
 	Commands: []*cli.Command{

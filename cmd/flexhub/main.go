@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -32,6 +33,7 @@ import (
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
+	"gopkg.in/yaml.v3"
 )
 
 func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
@@ -51,7 +53,26 @@ func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
 	}
 }
 
-func run(ctx context.Context, port int, dbURL, fsURL string) error {
+func run(c *cli.Context) error {
+	ctx := c.Context
+	port := c.Int("port")
+	dbURL := c.String("db")
+	fsURL := c.String("fs")
+	passwordsPath := c.String("passwords-from-file")
+
+	var passwords server.Passwords
+	if passwordsPath != "" {
+		b, err := os.ReadFile(passwordsPath)
+		if err != nil {
+			return err
+		}
+		dec := yaml.NewDecoder(bytes.NewBuffer(b))
+		dec.KnownFields(true)
+		if err := dec.Decode(&passwords); err != nil {
+			return err
+		}
+	}
+
 	db, err := sql.Open("mysql", dbURL)
 	if err != nil {
 		return err
@@ -82,7 +103,7 @@ func run(ctx context.Context, port int, dbURL, fsURL string) error {
 		return err
 	}
 
-	return server.Run(ctx, port, meta, fs)
+	return server.Run(ctx, port, meta, fs, &passwords)
 }
 
 func main() {
@@ -101,10 +122,9 @@ func main() {
 			&cli.IntFlag{Name: "port", Value: defaultPort, Usage: "TCP port to listen on"},
 			&cli.StringFlag{Name: "db", Required: true, Usage: `DB URL (ex. "username:password@tcp(hostname:port)/database?parseTime=true")`},
 			&cli.StringFlag{Name: "fs", Required: true, Usage: "File storage URL"},
+			&cli.StringFlag{Name: "passwords-from-file", Usage: "Protect services with password supplied in YAML file"},
 		},
-		Action: func(c *cli.Context) error {
-			return run(c.Context, c.Int("port"), c.String("db"), c.String("fs"))
-		},
+		Action: run,
 	}
 	if err := app.RunContext(ctx, os.Args); err != nil {
 		log.Fatalf("ERROR: %v", err)

@@ -20,16 +20,20 @@ import (
 	"log"
 	"net"
 
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"google.golang.org/grpc"
 )
 
-func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS) error {
-	srv := grpc.NewServer()
-	flex.RegisterFlexServiceServer(srv, newFlexServer(meta, fs))
-	flexletpb.RegisterFlexletServiceServer(srv, newFlexletServer(meta, fs))
+func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwords *Passwords) error {
+	srv := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(defaultAuthFunc)),
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(defaultAuthFunc)),
+	)
+	flex.RegisterFlexServiceServer(srv, newFlexServer(meta, fs, passwords.Flex))
+	flexletpb.RegisterFlexletServiceServer(srv, newFlexletServer(meta, fs, passwords.Flexlet))
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
