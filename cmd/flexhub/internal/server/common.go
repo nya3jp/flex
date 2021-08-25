@@ -19,8 +19,6 @@ import (
 	"io"
 	"path"
 	"time"
-
-	"github.com/nya3jp/flex"
 )
 
 const (
@@ -44,6 +42,6 @@ func pathForPackage(hash string) string {
 	return path.Join("packages", hash)
 }
 
-func pathForTask(id *flex.TaskId, name string) string {
-	return path.Join("tasks", id.GetUuid(), name)
+func pathForTask(id string, name string) string {
+	return path.Join("tasks", id, name)
 }

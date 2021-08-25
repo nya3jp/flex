@@ -73,13 +73,6 @@ func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClien
 	return f(ctx, cl)
 }
 
-func packageIDFor(name string) *flex.PackageId {
-	if hashutil.IsStdHash(name) {
-		return &flex.PackageId{Hash: name}
-	}
-	return &flex.PackageId{Tag: name}
-}
-
 func ensurePackage(ctx context.Context, cl flex.FlexServiceClient, names []string) (string, error) {
 	if len(names) == 0 {
 		return "", errors.New("no file to package")
@@ -106,7 +99,7 @@ func ensurePackage(ctx context.Context, cl flex.FlexServiceClient, names []strin
 
 	log.Printf("Hash: %s", hash)
 
-	_, err = cl.GetPackage(ctx, &flex.GetPackageRequest{Id: packageIDFor(hash)})
+	_, err = cl.GetPackage(ctx, &flex.GetPackageRequest{Type: &flex.GetPackageRequest_Hash{Hash: hash}})
 	if err == nil {
 		log.Print("Skipped uploading a package: already exists")
 		return hash, nil
@@ -145,5 +138,5 @@ func ensurePackage(ctx context.Context, cl flex.FlexServiceClient, names []strin
 	if err != nil {
 		return "", err
 	}
-	return res.GetId().GetHash(), nil
+	return res.GetHash(), nil
 }

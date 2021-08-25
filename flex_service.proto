@@ -43,18 +43,18 @@ message SubmitJobRequest {
 }
 
 message SubmitJobResponse {
-  JobId id = 1;
+  int64 id = 1;
 }
 
 message CancelJobRequest {
-  JobId id = 1;
+  int64 id = 1;
 }
 
 message CancelJobResponse {
 }
 
 message GetJobRequest {
-  JobId id = 1;
+  int64 id = 1;
 }
 
 message GetJobResponse {
@@ -62,7 +62,7 @@ message GetJobResponse {
 }
 
 message GetJobOutputRequest {
-  JobId id = 1;
+  int64 id = 1;
   enum JobOutputType {
     STDOUT = 0;
     STDERR = 1;
@@ -76,7 +76,7 @@ message GetJobOutputResponse {
 
 message ListJobsRequest {
   int64 limit = 1;
-  JobId before_id = 2;
+  int64 before_id = 2;
   JobState state = 3;
 }
 
@@ -92,11 +92,14 @@ message InsertPackageRequest {
 }
 
 message InsertPackageResponse {
-  PackageId id = 1;
+  string hash = 1;
 }
 
 message GetPackageRequest {
-  PackageId id = 1;
+  oneof type {
+    string hash = 1;
+    string tag = 2;
+  }
 }
 
 message GetPackageResponse {
@@ -104,8 +107,7 @@ message GetPackageResponse {
 }
 
 message UpdateTagRequest {
-  string tag = 1;
-  string hash = 2;
+  Tag tag = 1;
 }
 
 message UpdateTagResponse {}
@@ -114,7 +116,7 @@ message ListTagsRequest {
 }
 
 message ListTagsResponse {
-  repeated PackageId tags = 1;
+  repeated Tag tags = 1;
 }
 
 message ListFlexletsRequest {}

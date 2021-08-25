@@ -41,14 +41,14 @@ func newFlexletServer(meta *database.MetaStore, fs FS, password string) *flexlet
 }
 
 func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
-	ref, jobSpec, err := s.queue.WaitTask(ctx, req.GetFlexletId())
+	ref, jobSpec, err := s.queue.WaitTask(ctx, req.GetFlexletName())
 	if err != nil {
 		return nil, err
 	}
 
 	var tpkgs []*flexletpb.TaskPackage
 	for _, jpkg := range jobSpec.GetInputs().GetPackages() {
-		path := pathForPackage(jpkg.GetId().GetHash())
+		path := pathForPackage(jpkg.GetHash())
 		url, err := s.fs.PresignedURLForGet(ctx, path, preTaskTime)
 		if err != nil {
 			return nil, err

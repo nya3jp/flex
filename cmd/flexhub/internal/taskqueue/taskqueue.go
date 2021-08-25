@@ -39,7 +39,7 @@ func New(meta *database.MetaStore) *TaskQueue {
 	}
 }
 
-func (q *TaskQueue) WaitTask(ctx context.Context, flexletID *flex.FlexletId) (*flexletpb.TaskRef, *flex.JobSpec, error) {
+func (q *TaskQueue) WaitTask(ctx context.Context, flexletName string) (*flexletpb.TaskRef, *flex.JobSpec, error) {
 	select {
 	case <-q.waitLock:
 	case <-ctx.Done():
@@ -48,7 +48,7 @@ func (q *TaskQueue) WaitTask(ctx context.Context, flexletID *flex.FlexletId) (*f
 	defer func() { q.waitLock <- struct{}{} }()
 
 	for {
-		taskID, spec, err := q.meta.TakeTask(ctx, flexletID)
+		taskID, spec, err := q.meta.TakeTask(ctx, flexletName)
 		if errors.Is(err, database.ErrNoPendingTask) {
 			ctxutil.Sleep(ctx, time.Second)
 			continue

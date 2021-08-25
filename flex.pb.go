@@ -138,7 +138,7 @@ type Job struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id   *JobId   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Spec *JobSpec `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
 }
 
@@ -174,11 +174,11 @@ func (*Job) Descriptor() ([]byte, []int) {
 	return file_flex_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Job) GetId() *JobId {
+func (x *Job) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
-	return nil
+	return 0
 }
 
 func (x *Job) GetSpec() *JobSpec {
@@ -186,53 +186,6 @@ func (x *Job) GetSpec() *JobSpec {
 		return x.Spec
 	}
 	return nil
-}
-
-type JobId struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	IntId int64 `protobuf:"varint,1,opt,name=int_id,json=intId,proto3" json:"int_id,omitempty"`
-}
-
-func (x *JobId) Reset() {
-	*x = JobId{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *JobId) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*JobId) ProtoMessage() {}
-
-func (x *JobId) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use JobId.ProtoReflect.Descriptor instead.
-func (*JobId) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *JobId) GetIntId() int64 {
-	if x != nil {
-		return x.IntId
-	}
-	return 0
 }
 
 type JobSpec struct {
@@ -249,7 +202,7 @@ type JobSpec struct {
 func (x *JobSpec) Reset() {
 	*x = JobSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[2]
+		mi := &file_flex_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -262,7 +215,7 @@ func (x *JobSpec) String() string {
 func (*JobSpec) ProtoMessage() {}
 
 func (x *JobSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[2]
+	mi := &file_flex_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -275,7 +228,7 @@ func (x *JobSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobSpec.ProtoReflect.Descriptor instead.
 func (*JobSpec) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{2}
+	return file_flex_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *JobSpec) GetCommand() *JobCommand {
@@ -317,7 +270,7 @@ type JobInputs struct {
 func (x *JobInputs) Reset() {
 	*x = JobInputs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[3]
+		mi := &file_flex_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -330,7 +283,7 @@ func (x *JobInputs) String() string {
 func (*JobInputs) ProtoMessage() {}
 
 func (x *JobInputs) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[3]
+	mi := &file_flex_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -343,7 +296,7 @@ func (x *JobInputs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobInputs.ProtoReflect.Descriptor instead.
 func (*JobInputs) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{3}
+	return file_flex_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *JobInputs) GetPackages() []*JobPackage {
@@ -358,14 +311,15 @@ type JobPackage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id         *PackageId `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	InstallDir string     `protobuf:"bytes,2,opt,name=install_dir,json=installDir,proto3" json:"install_dir,omitempty"`
+	Hash       string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Tag        string `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
+	InstallDir string `protobuf:"bytes,3,opt,name=install_dir,json=installDir,proto3" json:"install_dir,omitempty"`
 }
 
 func (x *JobPackage) Reset() {
 	*x = JobPackage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[4]
+		mi := &file_flex_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -378,7 +332,7 @@ func (x *JobPackage) String() string {
 func (*JobPackage) ProtoMessage() {}
 
 func (x *JobPackage) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[4]
+	mi := &file_flex_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,14 +345,21 @@ func (x *JobPackage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobPackage.ProtoReflect.Descriptor instead.
 func (*JobPackage) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{4}
+	return file_flex_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *JobPackage) GetId() *PackageId {
+func (x *JobPackage) GetHash() string {
 	if x != nil {
-		return x.Id
+		return x.Hash
 	}
-	return nil
+	return ""
+}
+
+func (x *JobPackage) GetTag() string {
+	if x != nil {
+		return x.Tag
+	}
+	return ""
 }
 
 func (x *JobPackage) GetInstallDir() string {
@@ -419,7 +380,7 @@ type JobConstraints struct {
 func (x *JobConstraints) Reset() {
 	*x = JobConstraints{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[5]
+		mi := &file_flex_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -432,7 +393,7 @@ func (x *JobConstraints) String() string {
 func (*JobConstraints) ProtoMessage() {}
 
 func (x *JobConstraints) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[5]
+	mi := &file_flex_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -445,7 +406,7 @@ func (x *JobConstraints) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobConstraints.ProtoReflect.Descriptor instead.
 func (*JobConstraints) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{5}
+	return file_flex_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *JobConstraints) GetPriority() int32 {
@@ -460,17 +421,17 @@ type JobStatus struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Job       *Job        `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
-	State     JobState    `protobuf:"varint,2,opt,name=state,proto3,enum=flex.JobState" json:"state,omitempty"`
-	TaskId    *TaskId     `protobuf:"bytes,3,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
-	FlexletId *FlexletId  `protobuf:"bytes,4,opt,name=flexlet_id,json=flexletId,proto3" json:"flexlet_id,omitempty"`
-	Result    *TaskResult `protobuf:"bytes,5,opt,name=result,proto3" json:"result,omitempty"`
+	Job         *Job        `protobuf:"bytes,1,opt,name=job,proto3" json:"job,omitempty"`
+	State       JobState    `protobuf:"varint,2,opt,name=state,proto3,enum=flex.JobState" json:"state,omitempty"`
+	TaskId      string      `protobuf:"bytes,3,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	FlexletName string      `protobuf:"bytes,4,opt,name=flexlet_name,json=flexletName,proto3" json:"flexlet_name,omitempty"`
+	Result      *TaskResult `protobuf:"bytes,5,opt,name=result,proto3" json:"result,omitempty"`
 }
 
 func (x *JobStatus) Reset() {
 	*x = JobStatus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[6]
+		mi := &file_flex_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -483,7 +444,7 @@ func (x *JobStatus) String() string {
 func (*JobStatus) ProtoMessage() {}
 
 func (x *JobStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[6]
+	mi := &file_flex_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -496,7 +457,7 @@ func (x *JobStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobStatus.ProtoReflect.Descriptor instead.
 func (*JobStatus) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{6}
+	return file_flex_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *JobStatus) GetJob() *Job {
@@ -513,18 +474,18 @@ func (x *JobStatus) GetState() JobState {
 	return JobState_UNSPECIFIED
 }
 
-func (x *JobStatus) GetTaskId() *TaskId {
+func (x *JobStatus) GetTaskId() string {
 	if x != nil {
 		return x.TaskId
 	}
-	return nil
+	return ""
 }
 
-func (x *JobStatus) GetFlexletId() *FlexletId {
+func (x *JobStatus) GetFlexletName() string {
 	if x != nil {
-		return x.FlexletId
+		return x.FlexletName
 	}
-	return nil
+	return ""
 }
 
 func (x *JobStatus) GetResult() *TaskResult {
@@ -539,14 +500,14 @@ type Package struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id   *PackageId   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash string       `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	Spec *PackageSpec `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
 }
 
 func (x *Package) Reset() {
 	*x = Package{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[7]
+		mi := &file_flex_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -559,7 +520,7 @@ func (x *Package) String() string {
 func (*Package) ProtoMessage() {}
 
 func (x *Package) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[7]
+	mi := &file_flex_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,14 +533,14 @@ func (x *Package) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Package.ProtoReflect.Descriptor instead.
 func (*Package) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{7}
+	return file_flex_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *Package) GetId() *PackageId {
+func (x *Package) GetHash() string {
 	if x != nil {
-		return x.Id
+		return x.Hash
 	}
-	return nil
+	return ""
 }
 
 func (x *Package) GetSpec() *PackageSpec {
@@ -587,61 +548,6 @@ func (x *Package) GetSpec() *PackageSpec {
 		return x.Spec
 	}
 	return nil
-}
-
-type PackageId struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
-	Tag  string `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
-}
-
-func (x *PackageId) Reset() {
-	*x = PackageId{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *PackageId) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PackageId) ProtoMessage() {}
-
-func (x *PackageId) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PackageId.ProtoReflect.Descriptor instead.
-func (*PackageId) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *PackageId) GetHash() string {
-	if x != nil {
-		return x.Hash
-	}
-	return ""
-}
-
-func (x *PackageId) GetTag() string {
-	if x != nil {
-		return x.Tag
-	}
-	return ""
 }
 
 type PackageSpec struct {
@@ -653,7 +559,7 @@ type PackageSpec struct {
 func (x *PackageSpec) Reset() {
 	*x = PackageSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[9]
+		mi := &file_flex_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -666,7 +572,7 @@ func (x *PackageSpec) String() string {
 func (*PackageSpec) ProtoMessage() {}
 
 func (x *PackageSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[9]
+	mi := &file_flex_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -679,7 +585,62 @@ func (x *PackageSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PackageSpec.ProtoReflect.Descriptor instead.
 func (*PackageSpec) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{9}
+	return file_flex_proto_rawDescGZIP(), []int{7}
+}
+
+type Tag struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Hash string `protobuf:"bytes,2,opt,name=hash,proto3" json:"hash,omitempty"`
+}
+
+func (x *Tag) Reset() {
+	*x = Tag{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_flex_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Tag) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tag) ProtoMessage() {}
+
+func (x *Tag) ProtoReflect() protoreflect.Message {
+	mi := &file_flex_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tag.ProtoReflect.Descriptor instead.
+func (*Tag) Descriptor() ([]byte, []int) {
+	return file_flex_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Tag) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Tag) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
 }
 
 type FlexletStatus struct {
@@ -694,7 +655,7 @@ type FlexletStatus struct {
 func (x *FlexletStatus) Reset() {
 	*x = FlexletStatus{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[10]
+		mi := &file_flex_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -707,7 +668,7 @@ func (x *FlexletStatus) String() string {
 func (*FlexletStatus) ProtoMessage() {}
 
 func (x *FlexletStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[10]
+	mi := &file_flex_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -720,7 +681,7 @@ func (x *FlexletStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlexletStatus.ProtoReflect.Descriptor instead.
 func (*FlexletStatus) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{10}
+	return file_flex_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FlexletStatus) GetFlexlet() *Flexlet {
@@ -742,14 +703,14 @@ type Flexlet struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id   *FlexletId   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name string       `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Spec *FlexletSpec `protobuf:"bytes,2,opt,name=spec,proto3" json:"spec,omitempty"`
 }
 
 func (x *Flexlet) Reset() {
 	*x = Flexlet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[11]
+		mi := &file_flex_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -762,7 +723,7 @@ func (x *Flexlet) String() string {
 func (*Flexlet) ProtoMessage() {}
 
 func (x *Flexlet) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[11]
+	mi := &file_flex_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -775,14 +736,14 @@ func (x *Flexlet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Flexlet.ProtoReflect.Descriptor instead.
 func (*Flexlet) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{11}
+	return file_flex_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *Flexlet) GetId() *FlexletId {
+func (x *Flexlet) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
-	return nil
+	return ""
 }
 
 func (x *Flexlet) GetSpec() *FlexletSpec {
@@ -790,53 +751,6 @@ func (x *Flexlet) GetSpec() *FlexletSpec {
 		return x.Spec
 	}
 	return nil
-}
-
-type FlexletId struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-}
-
-func (x *FlexletId) Reset() {
-	*x = FlexletId{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *FlexletId) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FlexletId) ProtoMessage() {}
-
-func (x *FlexletId) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FlexletId.ProtoReflect.Descriptor instead.
-func (*FlexletId) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *FlexletId) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
 }
 
 type FlexletSpec struct {
@@ -850,7 +764,7 @@ type FlexletSpec struct {
 func (x *FlexletSpec) Reset() {
 	*x = FlexletSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[13]
+		mi := &file_flex_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -863,7 +777,7 @@ func (x *FlexletSpec) String() string {
 func (*FlexletSpec) ProtoMessage() {}
 
 func (x *FlexletSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[13]
+	mi := &file_flex_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +790,7 @@ func (x *FlexletSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlexletSpec.ProtoReflect.Descriptor instead.
 func (*FlexletSpec) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{13}
+	return file_flex_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FlexletSpec) GetCores() int64 {
@@ -897,7 +811,7 @@ type JobCommand struct {
 func (x *JobCommand) Reset() {
 	*x = JobCommand{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[14]
+		mi := &file_flex_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -910,7 +824,7 @@ func (x *JobCommand) String() string {
 func (*JobCommand) ProtoMessage() {}
 
 func (x *JobCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[14]
+	mi := &file_flex_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,7 +837,7 @@ func (x *JobCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobCommand.ProtoReflect.Descriptor instead.
 func (*JobCommand) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{14}
+	return file_flex_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *JobCommand) GetArgs() []string {
@@ -944,7 +858,7 @@ type JobLimits struct {
 func (x *JobLimits) Reset() {
 	*x = JobLimits{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[15]
+		mi := &file_flex_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -957,7 +871,7 @@ func (x *JobLimits) String() string {
 func (*JobLimits) ProtoMessage() {}
 
 func (x *JobLimits) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[15]
+	mi := &file_flex_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -970,7 +884,7 @@ func (x *JobLimits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobLimits.ProtoReflect.Descriptor instead.
 func (*JobLimits) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{15}
+	return file_flex_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *JobLimits) GetTime() *durationpb.Duration {
@@ -993,7 +907,7 @@ type TaskResult struct {
 func (x *TaskResult) Reset() {
 	*x = TaskResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[16]
+		mi := &file_flex_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1006,7 +920,7 @@ func (x *TaskResult) String() string {
 func (*TaskResult) ProtoMessage() {}
 
 func (x *TaskResult) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[16]
+	mi := &file_flex_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1019,7 +933,7 @@ func (x *TaskResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskResult.ProtoReflect.Descriptor instead.
 func (*TaskResult) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{16}
+	return file_flex_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TaskResult) GetExitCode() int32 {
@@ -1055,7 +969,7 @@ type FileLocation struct {
 func (x *FileLocation) Reset() {
 	*x = FileLocation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[17]
+		mi := &file_flex_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1068,7 +982,7 @@ func (x *FileLocation) String() string {
 func (*FileLocation) ProtoMessage() {}
 
 func (x *FileLocation) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[17]
+	mi := &file_flex_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +995,7 @@ func (x *FileLocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileLocation.ProtoReflect.Descriptor instead.
 func (*FileLocation) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{17}
+	return file_flex_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *FileLocation) GetCanonicalUrl() string {
@@ -1098,53 +1012,6 @@ func (x *FileLocation) GetPresignedUrl() string {
 	return ""
 }
 
-type TaskId struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
-}
-
-func (x *TaskId) Reset() {
-	*x = TaskId{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *TaskId) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TaskId) ProtoMessage() {}
-
-func (x *TaskId) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TaskId.ProtoReflect.Descriptor instead.
-func (*TaskId) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *TaskId) GetUuid() string {
-	if x != nil {
-		return x.Uuid
-	}
-	return ""
-}
-
 type Stats struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1157,7 +1024,7 @@ type Stats struct {
 func (x *Stats) Reset() {
 	*x = Stats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[19]
+		mi := &file_flex_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1170,7 +1037,7 @@ func (x *Stats) String() string {
 func (*Stats) ProtoMessage() {}
 
 func (x *Stats) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[19]
+	mi := &file_flex_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1183,7 +1050,7 @@ func (x *Stats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Stats.ProtoReflect.Descriptor instead.
 func (*Stats) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{19}
+	return file_flex_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Stats) GetJob() *JobStats {
@@ -1212,7 +1079,7 @@ type JobStats struct {
 func (x *JobStats) Reset() {
 	*x = JobStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[20]
+		mi := &file_flex_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1225,7 +1092,7 @@ func (x *JobStats) String() string {
 func (*JobStats) ProtoMessage() {}
 
 func (x *JobStats) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[20]
+	mi := &file_flex_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1238,7 +1105,7 @@ func (x *JobStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JobStats.ProtoReflect.Descriptor instead.
 func (*JobStats) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{20}
+	return file_flex_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *JobStats) GetPendingJobs() int64 {
@@ -1269,7 +1136,7 @@ type FlexletStats struct {
 func (x *FlexletStats) Reset() {
 	*x = FlexletStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_flex_proto_msgTypes[21]
+		mi := &file_flex_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1282,7 +1149,7 @@ func (x *FlexletStats) String() string {
 func (*FlexletStats) ProtoMessage() {}
 
 func (x *FlexletStats) ProtoReflect() protoreflect.Message {
-	mi := &file_flex_proto_msgTypes[21]
+	mi := &file_flex_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1295,7 +1162,7 @@ func (x *FlexletStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlexletStats.ProtoReflect.Descriptor instead.
 func (*FlexletStats) Descriptor() ([]byte, []int) {
-	return file_flex_proto_rawDescGZIP(), []int{21}
+	return file_flex_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *FlexletStats) GetOnlineFlexlets() int64 {
@@ -1332,96 +1199,86 @@ var file_flex_proto_rawDesc = []byte{
 	0x0a, 0x0a, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x04, 0x66, 0x6c,
 	0x65, 0x78, 0x1a, 0x1e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x62, 0x75, 0x66, 0x2f, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0x45, 0x0a, 0x03, 0x4a, 0x6f, 0x62, 0x12, 0x1b, 0x0a, 0x02, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62,
-	0x49, 0x64, 0x52, 0x02, 0x69, 0x64, 0x12, 0x21, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x53,
-	0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x22, 0x1e, 0x0a, 0x05, 0x4a, 0x6f, 0x62,
-	0x49, 0x64, 0x12, 0x15, 0x0a, 0x06, 0x69, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x03, 0x52, 0x05, 0x69, 0x6e, 0x74, 0x49, 0x64, 0x22, 0xbf, 0x01, 0x0a, 0x07, 0x4a, 0x6f,
-	0x62, 0x53, 0x70, 0x65, 0x63, 0x12, 0x2a, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f,
-	0x62, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
-	0x64, 0x12, 0x27, 0x0a, 0x06, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x49, 0x6e, 0x70, 0x75,
-	0x74, 0x73, 0x52, 0x06, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x12, 0x27, 0x0a, 0x06, 0x6c, 0x69,
-	0x6d, 0x69, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65,
-	0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x52, 0x06, 0x6c, 0x69, 0x6d,
-	0x69, 0x74, 0x73, 0x12, 0x36, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e,
-	0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e,
-	0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x52, 0x0b,
-	0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x22, 0x39, 0x0a, 0x09, 0x4a,
-	0x6f, 0x62, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x12, 0x2c, 0x0a, 0x08, 0x70, 0x61, 0x63, 0x6b,
-	0x61, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x66, 0x6c, 0x65,
-	0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x52, 0x08, 0x70, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x22, 0x4e, 0x0a, 0x0a, 0x4a, 0x6f, 0x62, 0x50, 0x61, 0x63,
-	0x6b, 0x61, 0x67, 0x65, 0x12, 0x1f, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x49,
-	0x64, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6c, 0x6c,
-	0x5f, 0x64, 0x69, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74,
-	0x61, 0x6c, 0x6c, 0x44, 0x69, 0x72, 0x22, 0x2c, 0x0a, 0x0e, 0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6e,
-	0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x72, 0x69, 0x6f,
-	0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f,
-	0x72, 0x69, 0x74, 0x79, 0x22, 0xcf, 0x01, 0x0a, 0x09, 0x4a, 0x6f, 0x62, 0x53, 0x74, 0x61, 0x74,
-	0x75, 0x73, 0x12, 0x1b, 0x0a, 0x03, 0x6a, 0x6f, 0x62, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x09, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x52, 0x03, 0x6a, 0x6f, 0x62, 0x12,
-	0x24, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0e,
-	0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05,
-	0x73, 0x74, 0x61, 0x74, 0x65, 0x12, 0x25, 0x0a, 0x07, 0x74, 0x61, 0x73, 0x6b, 0x5f, 0x69, 0x64,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x54, 0x61,
-	0x73, 0x6b, 0x49, 0x64, 0x52, 0x06, 0x74, 0x61, 0x73, 0x6b, 0x49, 0x64, 0x12, 0x2e, 0x0a, 0x0a,
-	0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x49,
-	0x64, 0x52, 0x09, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x49, 0x64, 0x12, 0x28, 0x0a, 0x06,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x66,
-	0x6c, 0x65, 0x78, 0x2e, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x51, 0x0a, 0x07, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67,
-	0x65, 0x12, 0x1f, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
-	0x66, 0x6c, 0x65, 0x78, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x49, 0x64, 0x52, 0x02,
-	0x69, 0x64, 0x12, 0x25, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x74, 0x6f, 0x22, 0x38, 0x0a, 0x03, 0x4a, 0x6f, 0x62, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02, 0x69, 0x64, 0x12, 0x21, 0x0a, 0x04, 0x73, 0x70, 0x65,
+	0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a,
+	0x6f, 0x62, 0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x22, 0xbf, 0x01, 0x0a,
+	0x07, 0x4a, 0x6f, 0x62, 0x53, 0x70, 0x65, 0x63, 0x12, 0x2a, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d,
+	0x61, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x66, 0x6c, 0x65, 0x78,
+	0x2e, 0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x52, 0x07, 0x63, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x12, 0x27, 0x0a, 0x06, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x49,
+	0x6e, 0x70, 0x75, 0x74, 0x73, 0x52, 0x06, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x12, 0x27, 0x0a,
+	0x06, 0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
+	0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x52, 0x06,
+	0x6c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x12, 0x36, 0x0a, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72,
+	0x61, 0x69, 0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x66, 0x6c,
+	0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74,
+	0x73, 0x52, 0x0b, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73, 0x22, 0x39,
+	0x0a, 0x09, 0x4a, 0x6f, 0x62, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x73, 0x12, 0x2c, 0x0a, 0x08, 0x70,
+	0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e,
+	0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f, 0x62, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x52,
+	0x08, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x22, 0x53, 0x0a, 0x0a, 0x4a, 0x6f, 0x62,
+	0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x10, 0x0a, 0x03, 0x74,
+	0x61, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x74, 0x61, 0x67, 0x12, 0x1f, 0x0a,
+	0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6c, 0x6c, 0x5f, 0x64, 0x69, 0x72, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6c, 0x6c, 0x44, 0x69, 0x72, 0x22, 0x2c,
+	0x0a, 0x0e, 0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6e, 0x73, 0x74, 0x72, 0x61, 0x69, 0x6e, 0x74, 0x73,
+	0x12, 0x1a, 0x0a, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x08, 0x70, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x22, 0xb4, 0x01, 0x0a,
+	0x09, 0x4a, 0x6f, 0x62, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1b, 0x0a, 0x03, 0x6a, 0x6f,
+	0x62, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a,
+	0x6f, 0x62, 0x52, 0x03, 0x6a, 0x6f, 0x62, 0x12, 0x24, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0e, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x4a, 0x6f,
+	0x62, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x12, 0x17, 0x0a,
+	0x07, 0x74, 0x61, 0x73, 0x6b, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06,
+	0x74, 0x61, 0x73, 0x6b, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65,
+	0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x66, 0x6c,
+	0x65, 0x78, 0x6c, 0x65, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x28, 0x0a, 0x06, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x66, 0x6c, 0x65, 0x78,
+	0x2e, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x52, 0x06, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x22, 0x44, 0x0a, 0x07, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x12, 0x12,
+	0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61,
+	0x73, 0x68, 0x12, 0x25, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x11, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x53,
-	0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x22, 0x31, 0x0a, 0x09, 0x50, 0x61, 0x63,
-	0x6b, 0x61, 0x67, 0x65, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x12, 0x10, 0x0a, 0x03, 0x74, 0x61,
-	0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x74, 0x61, 0x67, 0x22, 0x0d, 0x0a, 0x0b,
-	0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x53, 0x70, 0x65, 0x63, 0x22, 0x62, 0x0a, 0x0d, 0x46,
-	0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x27, 0x0a, 0x07,
-	0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e,
-	0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x52, 0x07, 0x66, 0x6c,
-	0x65, 0x78, 0x6c, 0x65, 0x74, 0x12, 0x28, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0e, 0x32, 0x12, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46, 0x6c, 0x65, 0x78,
-	0x6c, 0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x22,
-	0x51, 0x0a, 0x07, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x12, 0x1f, 0x0a, 0x02, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46, 0x6c,
-	0x65, 0x78, 0x6c, 0x65, 0x74, 0x49, 0x64, 0x52, 0x02, 0x69, 0x64, 0x12, 0x25, 0x0a, 0x04, 0x73,
-	0x70, 0x65, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x66, 0x6c, 0x65, 0x78,
-	0x2e, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70,
-	0x65, 0x63, 0x22, 0x1f, 0x0a, 0x09, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x49, 0x64, 0x12,
+	0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x22, 0x0d, 0x0a, 0x0b, 0x50, 0x61, 0x63,
+	0x6b, 0x61, 0x67, 0x65, 0x53, 0x70, 0x65, 0x63, 0x22, 0x2d, 0x0a, 0x03, 0x54, 0x61, 0x67, 0x12,
 	0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e,
-	0x61, 0x6d, 0x65, 0x22, 0x23, 0x0a, 0x0b, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x70,
-	0x65, 0x63, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x03, 0x52, 0x05, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x22, 0x20, 0x0a, 0x0a, 0x4a, 0x6f, 0x62, 0x43,
-	0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x61, 0x72, 0x67, 0x73, 0x22, 0x3a, 0x0a, 0x09, 0x4a, 0x6f,
-	0x62, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x73, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x22, 0x72, 0x0a, 0x0a, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65,
-	0x73, 0x75, 0x6c, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x64,
-	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x78, 0x69, 0x74, 0x43, 0x6f, 0x64,
-	0x65, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2d, 0x0a, 0x04, 0x74,
-	0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x22, 0x58, 0x0a, 0x0c, 0x46, 0x69,
-	0x6c, 0x65, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x61,
-	0x6e, 0x6f, 0x6e, 0x69, 0x63, 0x61, 0x6c, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0c, 0x63, 0x61, 0x6e, 0x6f, 0x6e, 0x69, 0x63, 0x61, 0x6c, 0x55, 0x72, 0x6c, 0x12,
-	0x23, 0x0a, 0x0d, 0x70, 0x72, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x75, 0x72, 0x6c,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x70, 0x72, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x65,
-	0x64, 0x55, 0x72, 0x6c, 0x22, 0x1c, 0x0a, 0x06, 0x54, 0x61, 0x73, 0x6b, 0x49, 0x64, 0x12, 0x12,
-	0x0a, 0x04, 0x75, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75,
-	0x69, 0x64, 0x22, 0x57, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x73, 0x12, 0x20, 0x0a, 0x03, 0x6a,
+	0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x68, 0x61, 0x73, 0x68, 0x22, 0x62, 0x0a, 0x0d, 0x46, 0x6c, 0x65, 0x78, 0x6c,
+	0x65, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x27, 0x0a, 0x07, 0x66, 0x6c, 0x65, 0x78,
+	0x6c, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0d, 0x2e, 0x66, 0x6c, 0x65, 0x78,
+	0x2e, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x52, 0x07, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65,
+	0x74, 0x12, 0x28, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x12, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53,
+	0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x22, 0x44, 0x0a, 0x07, 0x46,
+	0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x25, 0x0a, 0x04, 0x73, 0x70,
+	0x65, 0x63, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e,
+	0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65,
+	0x63, 0x22, 0x23, 0x0a, 0x0b, 0x46, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x53, 0x70, 0x65, 0x63,
+	0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52,
+	0x05, 0x63, 0x6f, 0x72, 0x65, 0x73, 0x22, 0x20, 0x0a, 0x0a, 0x4a, 0x6f, 0x62, 0x43, 0x6f, 0x6d,
+	0x6d, 0x61, 0x6e, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x04, 0x61, 0x72, 0x67, 0x73, 0x22, 0x3a, 0x0a, 0x09, 0x4a, 0x6f, 0x62, 0x4c,
+	0x69, 0x6d, 0x69, 0x74, 0x73, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x04,
+	0x74, 0x69, 0x6d, 0x65, 0x22, 0x72, 0x0a, 0x0a, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x12, 0x1b, 0x0a, 0x09, 0x65, 0x78, 0x69, 0x74, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x78, 0x69, 0x74, 0x43, 0x6f, 0x64, 0x65, 0x12,
+	0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2d, 0x0a, 0x04, 0x74, 0x69, 0x6d,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x22, 0x58, 0x0a, 0x0c, 0x46, 0x69, 0x6c, 0x65,
+	0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x61, 0x6e, 0x6f,
+	0x6e, 0x69, 0x63, 0x61, 0x6c, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0c, 0x63, 0x61, 0x6e, 0x6f, 0x6e, 0x69, 0x63, 0x61, 0x6c, 0x55, 0x72, 0x6c, 0x12, 0x23, 0x0a,
+	0x0d, 0x70, 0x72, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x70, 0x72, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x55,
+	0x72, 0x6c, 0x22, 0x57, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x73, 0x12, 0x20, 0x0a, 0x03, 0x6a,
 	0x6f, 0x62, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e,
 	0x4a, 0x6f, 0x62, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x03, 0x6a, 0x6f, 0x62, 0x12, 0x2c, 0x0a,
 	0x07, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12,
@@ -1466,63 +1323,54 @@ func file_flex_proto_rawDescGZIP() []byte {
 }
 
 var file_flex_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_flex_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_flex_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_flex_proto_goTypes = []interface{}{
 	(JobState)(0),               // 0: flex.JobState
 	(FlexletState)(0),           // 1: flex.FlexletState
 	(*Job)(nil),                 // 2: flex.Job
-	(*JobId)(nil),               // 3: flex.JobId
-	(*JobSpec)(nil),             // 4: flex.JobSpec
-	(*JobInputs)(nil),           // 5: flex.JobInputs
-	(*JobPackage)(nil),          // 6: flex.JobPackage
-	(*JobConstraints)(nil),      // 7: flex.JobConstraints
-	(*JobStatus)(nil),           // 8: flex.JobStatus
-	(*Package)(nil),             // 9: flex.Package
-	(*PackageId)(nil),           // 10: flex.PackageId
-	(*PackageSpec)(nil),         // 11: flex.PackageSpec
-	(*FlexletStatus)(nil),       // 12: flex.FlexletStatus
-	(*Flexlet)(nil),             // 13: flex.Flexlet
-	(*FlexletId)(nil),           // 14: flex.FlexletId
-	(*FlexletSpec)(nil),         // 15: flex.FlexletSpec
-	(*JobCommand)(nil),          // 16: flex.JobCommand
-	(*JobLimits)(nil),           // 17: flex.JobLimits
-	(*TaskResult)(nil),          // 18: flex.TaskResult
-	(*FileLocation)(nil),        // 19: flex.FileLocation
-	(*TaskId)(nil),              // 20: flex.TaskId
-	(*Stats)(nil),               // 21: flex.Stats
-	(*JobStats)(nil),            // 22: flex.JobStats
-	(*FlexletStats)(nil),        // 23: flex.FlexletStats
-	(*durationpb.Duration)(nil), // 24: google.protobuf.Duration
+	(*JobSpec)(nil),             // 3: flex.JobSpec
+	(*JobInputs)(nil),           // 4: flex.JobInputs
+	(*JobPackage)(nil),          // 5: flex.JobPackage
+	(*JobConstraints)(nil),      // 6: flex.JobConstraints
+	(*JobStatus)(nil),           // 7: flex.JobStatus
+	(*Package)(nil),             // 8: flex.Package
+	(*PackageSpec)(nil),         // 9: flex.PackageSpec
+	(*Tag)(nil),                 // 10: flex.Tag
+	(*FlexletStatus)(nil),       // 11: flex.FlexletStatus
+	(*Flexlet)(nil),             // 12: flex.Flexlet
+	(*FlexletSpec)(nil),         // 13: flex.FlexletSpec
+	(*JobCommand)(nil),          // 14: flex.JobCommand
+	(*JobLimits)(nil),           // 15: flex.JobLimits
+	(*TaskResult)(nil),          // 16: flex.TaskResult
+	(*FileLocation)(nil),        // 17: flex.FileLocation
+	(*Stats)(nil),               // 18: flex.Stats
+	(*JobStats)(nil),            // 19: flex.JobStats
+	(*FlexletStats)(nil),        // 20: flex.FlexletStats
+	(*durationpb.Duration)(nil), // 21: google.protobuf.Duration
 }
 var file_flex_proto_depIdxs = []int32{
-	3,  // 0: flex.Job.id:type_name -> flex.JobId
-	4,  // 1: flex.Job.spec:type_name -> flex.JobSpec
-	16, // 2: flex.JobSpec.command:type_name -> flex.JobCommand
-	5,  // 3: flex.JobSpec.inputs:type_name -> flex.JobInputs
-	17, // 4: flex.JobSpec.limits:type_name -> flex.JobLimits
-	7,  // 5: flex.JobSpec.constraints:type_name -> flex.JobConstraints
-	6,  // 6: flex.JobInputs.packages:type_name -> flex.JobPackage
-	10, // 7: flex.JobPackage.id:type_name -> flex.PackageId
-	2,  // 8: flex.JobStatus.job:type_name -> flex.Job
-	0,  // 9: flex.JobStatus.state:type_name -> flex.JobState
-	20, // 10: flex.JobStatus.task_id:type_name -> flex.TaskId
-	14, // 11: flex.JobStatus.flexlet_id:type_name -> flex.FlexletId
-	18, // 12: flex.JobStatus.result:type_name -> flex.TaskResult
-	10, // 13: flex.Package.id:type_name -> flex.PackageId
-	11, // 14: flex.Package.spec:type_name -> flex.PackageSpec
-	13, // 15: flex.FlexletStatus.flexlet:type_name -> flex.Flexlet
-	1,  // 16: flex.FlexletStatus.state:type_name -> flex.FlexletState
-	14, // 17: flex.Flexlet.id:type_name -> flex.FlexletId
-	15, // 18: flex.Flexlet.spec:type_name -> flex.FlexletSpec
-	24, // 19: flex.JobLimits.time:type_name -> google.protobuf.Duration
-	24, // 20: flex.TaskResult.time:type_name -> google.protobuf.Duration
-	22, // 21: flex.Stats.job:type_name -> flex.JobStats
-	23, // 22: flex.Stats.flexlet:type_name -> flex.FlexletStats
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	3,  // 0: flex.Job.spec:type_name -> flex.JobSpec
+	14, // 1: flex.JobSpec.command:type_name -> flex.JobCommand
+	4,  // 2: flex.JobSpec.inputs:type_name -> flex.JobInputs
+	15, // 3: flex.JobSpec.limits:type_name -> flex.JobLimits
+	6,  // 4: flex.JobSpec.constraints:type_name -> flex.JobConstraints
+	5,  // 5: flex.JobInputs.packages:type_name -> flex.JobPackage
+	2,  // 6: flex.JobStatus.job:type_name -> flex.Job
+	0,  // 7: flex.JobStatus.state:type_name -> flex.JobState
+	16, // 8: flex.JobStatus.result:type_name -> flex.TaskResult
+	9,  // 9: flex.Package.spec:type_name -> flex.PackageSpec
+	12, // 10: flex.FlexletStatus.flexlet:type_name -> flex.Flexlet
+	1,  // 11: flex.FlexletStatus.state:type_name -> flex.FlexletState
+	13, // 12: flex.Flexlet.spec:type_name -> flex.FlexletSpec
+	21, // 13: flex.JobLimits.time:type_name -> google.protobuf.Duration
+	21, // 14: flex.TaskResult.time:type_name -> google.protobuf.Duration
+	19, // 15: flex.Stats.job:type_name -> flex.JobStats
+	20, // 16: flex.Stats.flexlet:type_name -> flex.FlexletStats
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_flex_proto_init() }
@@ -1544,18 +1392,6 @@ func file_flex_proto_init() {
 			}
 		}
 		file_flex_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*JobId); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_flex_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobSpec); i {
 			case 0:
 				return &v.state
@@ -1567,7 +1403,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobInputs); i {
 			case 0:
 				return &v.state
@@ -1579,7 +1415,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobPackage); i {
 			case 0:
 				return &v.state
@@ -1591,7 +1427,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobConstraints); i {
 			case 0:
 				return &v.state
@@ -1603,7 +1439,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobStatus); i {
 			case 0:
 				return &v.state
@@ -1615,7 +1451,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Package); i {
 			case 0:
 				return &v.state
@@ -1627,19 +1463,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PackageId); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_flex_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PackageSpec); i {
 			case 0:
 				return &v.state
@@ -1651,7 +1475,19 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Tag); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_flex_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FlexletStatus); i {
 			case 0:
 				return &v.state
@@ -1663,7 +1499,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Flexlet); i {
 			case 0:
 				return &v.state
@@ -1675,19 +1511,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FlexletId); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_flex_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FlexletSpec); i {
 			case 0:
 				return &v.state
@@ -1699,7 +1523,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobCommand); i {
 			case 0:
 				return &v.state
@@ -1711,7 +1535,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobLimits); i {
 			case 0:
 				return &v.state
@@ -1723,7 +1547,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*TaskResult); i {
 			case 0:
 				return &v.state
@@ -1735,7 +1559,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FileLocation); i {
 			case 0:
 				return &v.state
@@ -1747,19 +1571,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TaskId); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_flex_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Stats); i {
 			case 0:
 				return &v.state
@@ -1771,7 +1583,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*JobStats); i {
 			case 0:
 				return &v.state
@@ -1783,7 +1595,7 @@ func file_flex_proto_init() {
 				return nil
 			}
 		}
-		file_flex_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_flex_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FlexletStats); i {
 			case 0:
 				return &v.state
@@ -1802,7 +1614,7 @@ func file_flex_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_flex_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   22,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

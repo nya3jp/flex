@@ -27,13 +27,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, id *flex.FlexletId, cores int) error {
+func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
 	tokens := make(chan struct{}, cores)
 	for i := 0; i < cores; i++ {
 		tokens <- struct{}{}
 	}
 
-	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Id: id, Spec: &flex.FlexletSpec{Cores: int64(cores)}})
+	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int64(cores)}})
 	defer stop()
 
 	log.Printf("INFO: Flexlet start")
@@ -45,7 +45,7 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			return ctx.Err()
 		}
 
-		task, err := waitTaskWithRetry(ctx, cl, id)
+		task, err := waitTaskWithRetry(ctx, cl, name)
 		if err != nil {
 			return err
 		}
@@ -54,9 +54,9 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 			defer func() { tokens <- struct{}{} }()
 			stop := startTaskUpdater(ctx, cl, task.GetRef())
 			defer stop()
-			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
+			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 			result := runner.RunTask(ctx, task.GetSpec())
-			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId().GetUuid(), task.GetRef().GetJobId().GetIntId())
+			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 			if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Ref: task.GetRef(), Result: result}); err != nil {
 				log.Printf("WARNING: FinishTask failed: %v", err)
 			}
@@ -83,12 +83,12 @@ func startFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient,
 	return cancel
 }
 
-func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
+func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		task, err := waitTask(ctx, cl, flexletID)
+		task, err := waitTask(ctx, cl, flexletName)
 		if err == nil {
 			return task, nil
 		}
@@ -100,10 +100,10 @@ func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, f
 	}
 }
 
-func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletID *flex.FlexletId) (*flexletpb.Task, error) {
+func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
-	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletId: flexletID})
+	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletName: flexletName})
 	if err != nil {
 		return nil, err
 	}

@@ -32,7 +32,7 @@ Jobs
   <tbody>
   {{ range .Jobs }}
   <tr>
-    <td><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetId.GetIntId }}</a></td>
+    <td><a class="text-reset" href="/jobs/{{ .GetJob.GetId }}">{{ .GetJob.GetId }}</a></td>
     <td>
       {{ if eq .GetState.String "PENDING" }}
       <span class="badge bg-secondary">Pending</span>
@@ -44,7 +44,7 @@ Jobs
       <span class="badge bg-danger">Failure</span>
       {{ end }}
     </td>
-    <td class="command"><a class="text-reset" href="/jobs/{{ .GetJob.GetId.GetIntId }}">{{ .GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</a></td>
+    <td class="command"><a class="text-reset" href="/jobs/{{ .GetJob.GetId }}">{{ .GetJob.GetSpec.GetCommand.GetArgs | shellquote }}</a></td>
   </tr>
   {{ end }}
   </tbody>

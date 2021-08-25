@@ -26,8 +26,8 @@ message Task {
 }
 
 message TaskRef {
-  TaskId task_id = 1;
-  JobId job_id = 2;
+  string task_id = 1;
+  int64 job_id = 2;
 }
 
 message TaskSpec {

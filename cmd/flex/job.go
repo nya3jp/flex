@@ -29,6 +29,7 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/ctxutil"
+	"github.com/nya3jp/flex/internal/hashutil"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -146,7 +147,7 @@ var cmdJobCreate = &cli.Command{
 			if err != nil {
 				return err
 			}
-			fmt.Println(id.GetIntId())
+			fmt.Println(id)
 			return nil
 		})
 	},
@@ -161,14 +162,13 @@ var cmdJobWait = &cli.Command{
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
-		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
+		id, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
 		if err != nil {
 			return err
 		}
-		id := &flex.JobId{IntId: intID}
 
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			log.Printf("Waiting for job %d", id.GetIntId())
+			log.Printf("Waiting for job %d", id)
 			if err := waitJob(ctx, cl, id); err != nil {
 				return err
 			}
@@ -186,11 +186,10 @@ var cmdJobOutputs = &cli.Command{
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 
-		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
+		id, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
 		if err != nil {
 			return err
 		}
-		id := &flex.JobId{IntId: intID}
 
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
 			if err := printJobOutputs(ctx, cl, id); err != nil {
@@ -209,11 +208,10 @@ var cmdJobInfo = &cli.Command{
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
-		intID, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
+		id, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
 		if err != nil {
 			return err
 		}
-		id := &flex.JobId{IntId: intID}
 
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
 			res, err := cl.GetJob(ctx, &flex.GetJobRequest{Id: id})
@@ -239,7 +237,7 @@ var cmdJobList = &cli.Command{
 	},
 	Action: func(c *cli.Context) error {
 		limit := c.Int64(flagLimit.Name)
-		before := c.Int64(flagBefore.Name)
+		beforeID := c.Int64(flagBefore.Name)
 		stateStr := c.String(flagState.Name)
 		if c.NArg() > 0 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -262,7 +260,7 @@ var cmdJobList = &cli.Command{
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
 			res, err := cl.ListJobs(ctx, &flex.ListJobsRequest{
 				Limit:    limit,
-				BeforeId: &flex.JobId{IntId: before},
+				BeforeId: beforeID,
 				State:    state,
 			})
 			if err != nil {
@@ -292,7 +290,7 @@ func makeArgs(c *cli.Context) ([]string, error) {
 	return c.Args().Slice(), nil
 }
 
-func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, args []string) (*flex.JobId, error) {
+func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, args []string) (int64, error) {
 	priority := c.Int(flagPriority.Name)
 	files := c.StringSlice(flagFile.Name)
 	packages := c.StringSlice(flagPackage.Name)
@@ -301,14 +299,20 @@ func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, a
 	if len(files) > 0 {
 		hash, err := ensurePackage(ctx, cl, files)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		packages = append(packages, hash)
 	}
 
 	var pkgs []*flex.JobPackage
 	for _, p := range packages {
-		pkgs = append(pkgs, &flex.JobPackage{Id: packageIDFor(p)})
+		var pkg *flex.JobPackage
+		if hashutil.IsStdHash(p) {
+			pkg = &flex.JobPackage{Hash: p}
+		} else {
+			pkg = &flex.JobPackage{Tag: p}
+		}
+		pkgs = append(pkgs, pkg)
 	}
 
 	spec := &flex.JobSpec{
@@ -327,14 +331,14 @@ func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, a
 	}
 	res, err := cl.SubmitJob(ctx, &flex.SubmitJobRequest{Spec: spec})
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	log.Printf("Submitted job %d", res.GetId().GetIntId())
+	log.Printf("Submitted job %d", res.GetId())
 	return res.GetId(), nil
 }
 
-func waitJob(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId) error {
+func waitJob(ctx context.Context, cl flex.FlexServiceClient, id int64) error {
 	lastState := flex.JobState_PENDING
 	for {
 		res, err := cl.GetJob(ctx, &flex.GetJobRequest{Id: id})
@@ -348,12 +352,12 @@ func waitJob(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId) err
 			lastState = state
 			switch state {
 			case flex.JobState_PENDING:
-				log.Printf("Job %d returned", id.GetIntId())
+				log.Printf("Job %d returned", id)
 			case flex.JobState_RUNNING:
-				log.Printf("Job %d running", id.GetIntId())
+				log.Printf("Job %d running", id)
 			case flex.JobState_FINISHED:
 				result := job.GetResult()
-				log.Printf("Job %d finished: %s (%v)", id.GetIntId(), result.GetMessage(), result.GetTime().AsDuration())
+				log.Printf("Job %d finished: %s (%v)", id, result.GetMessage(), result.GetTime().AsDuration())
 				return nil
 			}
 		}
@@ -364,7 +368,7 @@ func waitJob(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId) err
 	}
 }
 
-func printJobOutputs(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId) error {
+func printJobOutputs(ctx context.Context, cl flex.FlexServiceClient, id int64) error {
 	if err := func() error {
 		jo, err := cl.GetJobOutput(ctx, &flex.GetJobOutputRequest{Id: id, Type: flex.GetJobOutputRequest_STDERR})
 		if err != nil {

@@ -30,7 +30,7 @@ service FlexletService {
 }
 
 message WaitTaskRequest {
-  FlexletId flexlet_id = 1;
+  string flexlet_name = 1;
 }
 
 message WaitTaskResponse {

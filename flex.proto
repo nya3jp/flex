@@ -21,12 +21,8 @@ option go_package = "github.com/nya3jp/flex";
 import "google/protobuf/duration.proto";
 
 message Job {
-  JobId id = 1;
+  int64 id = 1;
   JobSpec spec = 2;
-}
-
-message JobId {
-  int64 int_id = 1;
 }
 
 message JobSpec {
@@ -41,8 +37,9 @@ message JobInputs {
 }
 
 message JobPackage {
-  PackageId id = 1;
-  string install_dir = 2;
+  string hash = 1;
+  string tag = 2;
+  string install_dir = 3;
 }
 
 message JobConstraints {
@@ -52,8 +49,8 @@ message JobConstraints {
 message JobStatus {
   Job job = 1;
   JobState state = 2;
-  TaskId task_id = 3;
-  FlexletId flexlet_id = 4;
+  string task_id = 3;
+  string flexlet_name = 4;
   TaskResult result = 5;
 }
 
@@ -65,16 +62,16 @@ enum JobState {
 }
 
 message Package {
-  PackageId id = 1;
+  string hash = 1;
   PackageSpec spec = 2;
 }
 
-message PackageId {
-  string hash = 1;
-  string tag = 2;
+message PackageSpec {
 }
 
-message PackageSpec {
+message Tag {
+  string name = 1;
+  string hash = 2;
 }
 
 message FlexletStatus {
@@ -83,12 +80,8 @@ message FlexletStatus {
 }
 
 message Flexlet {
-  FlexletId id = 1;
-  FlexletSpec spec = 2;
-}
-
-message FlexletId {
   string name = 1;
+  FlexletSpec spec = 2;
 }
 
 message FlexletSpec {
@@ -117,10 +110,6 @@ message TaskResult {
 message FileLocation {
   string canonical_url = 1;
   string presigned_url = 2;
-}
-
-message TaskId {
-  string uuid = 1;
 }
 
 message Stats {

@@ -60,8 +60,15 @@ func (s *flexServer) SubmitJob(ctx context.Context, req *flex.SubmitJobRequest) 
 	}
 
 	for _, pkg := range req.GetSpec().GetInputs().GetPackages() {
-		if err := resolvePackageId(ctx, s.meta, pkg.GetId()); err != nil {
-			return nil, err
+		if tag := pkg.GetTag(); tag != "" {
+			hash, err := s.meta.LookupTag(ctx, tag)
+			if err != nil {
+				return nil, err
+			}
+			pkg.Hash = hash
+		}
+		if !hashutil.IsStdHash(pkg.GetHash()) {
+			return nil, errors.New("invalid package hash")
 		}
 	}
 
@@ -164,24 +171,32 @@ func (s *flexServer) InsertPackage(stream flex.FlexService_InsertPackageServer) 
 		return err
 	}
 
-	return stream.SendAndClose(&flex.InsertPackageResponse{Id: &flex.PackageId{Hash: hash}})
+	return stream.SendAndClose(&flex.InsertPackageResponse{Hash: hash})
 }
 
 func (s *flexServer) GetPackage(ctx context.Context, req *flex.GetPackageRequest) (*flex.GetPackageResponse, error) {
-	id := req.GetId()
-	if err := resolvePackageId(ctx, s.meta, id); err != nil {
-		return nil, err
+	if tag := req.GetTag(); tag != "" {
+		hash, err := s.meta.LookupTag(ctx, tag)
+		if err != nil {
+			return nil, err
+		}
+		req.Type = &flex.GetPackageRequest_Hash{Hash: hash}
 	}
-	err := s.fs.Exists(ctx, pathForPackage(id.GetHash()))
+	hash := req.GetHash()
+	if !hashutil.IsStdHash(hash) {
+		return nil, errors.New("invalid package hash")
+	}
+
+	err := s.fs.Exists(ctx, pathForPackage(hash))
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, status.Errorf(codes.NotFound, "package not found: %s: %v", id.GetHash(), err)
+		return nil, status.Errorf(codes.NotFound, "package not found: %s: %v", hash, err)
 	}
 	if err != nil {
 		return nil, err
 	}
 	return &flex.GetPackageResponse{
 		Package: &flex.Package{
-			Id:   id,
+			Hash: hash,
 			Spec: &flex.PackageSpec{},
 		},
 	}, nil
@@ -189,14 +204,15 @@ func (s *flexServer) GetPackage(ctx context.Context, req *flex.GetPackageRequest
 
 func (s *flexServer) UpdateTag(ctx context.Context, req *flex.UpdateTagRequest) (*flex.UpdateTagResponse, error) {
 	tag := req.GetTag()
-	if tag == "" {
-		return nil, errors.New("tag is empty")
+	name := tag.GetName()
+	if name == "" {
+		return nil, errors.New("tag name is empty")
 	}
-	hash := req.GetHash()
+	hash := tag.GetHash()
 	if !hashutil.IsStdHash(hash) {
 		return nil, errors.New("invalid hash")
 	}
-	if err := s.meta.UpdateTag(ctx, tag, hash); err != nil {
+	if err := s.meta.UpdateTag(ctx, name, hash); err != nil {
 		return nil, err
 	}
 	return &flex.UpdateTagResponse{}, nil
@@ -224,24 +240,4 @@ func (s *flexServer) GetStats(ctx context.Context, req *flex.GetStatsRequest) (*
 		return nil, err
 	}
 	return &flex.GetStatsResponse{Stats: stats}, nil
-}
-
-func resolvePackageId(ctx context.Context, meta *database.MetaStore, id *flex.PackageId) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("resolving package ID: %w", err)
-		}
-	}()
-
-	if tag := id.GetTag(); tag != "" {
-		hash, err := meta.LookupTag(ctx, tag)
-		if err != nil {
-			return err
-		}
-		id.Hash = hash
-	}
-	if !hashutil.IsStdHash(id.GetHash()) {
-		return errors.New("invalid package hash")
-	}
-	return nil
 }

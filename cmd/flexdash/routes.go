@@ -93,7 +93,7 @@ func renderHTML(w http.ResponseWriter, tmpl *template.Template, values interface
 	}
 }
 
-func readJobOutput(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId, t flex.GetJobOutputRequest_JobOutputType) (string, error) {
+func readJobOutput(ctx context.Context, cl flex.FlexServiceClient, id int64, t flex.GetJobOutputRequest_JobOutputType) (string, error) {
 	rres, err := cl.GetJobOutput(ctx, &flex.GetJobOutputRequest{Id: id, Type: t})
 	if err != nil {
 		return "", err
@@ -147,7 +147,7 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 			beforeJobID = i
 		}
 
-		res, err := s.cl.ListJobs(ctx, &flex.ListJobsRequest{Limit: 100, BeforeId: &flex.JobId{IntId: beforeJobID}})
+		res, err := s.cl.ListJobs(ctx, &flex.ListJobsRequest{Limit: 100, BeforeId: beforeJobID})
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 		jobs := res.GetJobs()
 		var nextBeforeJobID int64
 		if len(jobs) > 0 {
-			nextBeforeJobID = jobs[len(jobs)-1].GetJob().GetId().GetIntId()
+			nextBeforeJobID = jobs[len(jobs)-1].GetJob().GetId()
 		}
 		values := &jobsValues{
 			Base:            baseValues{Section: sectionJobs},
@@ -169,11 +169,10 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 
 func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	respond(w, r, func(ctx context.Context) error {
-		jobIntID, err := strconv.ParseInt(p.ByName("jobID"), 10, 64)
+		jobID, err := strconv.ParseInt(p.ByName("jobID"), 10, 64)
 		if err != nil {
 			return fmt.Errorf("invalid job ID: %w", err)
 		}
-		jobID := &flex.JobId{IntId: jobIntID}
 
 		res, err := s.cl.GetJob(ctx, &flex.GetJobRequest{Id: jobID})
 		if err != nil {

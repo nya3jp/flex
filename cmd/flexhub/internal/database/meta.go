@@ -20,7 +20,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/google/uuid"
@@ -92,7 +91,7 @@ WHERE j.state = 'RUNNING' AND t.last_update < TIMESTAMPADD(MINUTE, -1, CURRENT_T
 	return nil
 }
 
-func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id *flex.JobId, err error) {
+func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id int64, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("inserting a job: %w", err)
@@ -102,23 +101,23 @@ func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id *flex
 	priority := spec.GetConstraints().GetPriority()
 	req, err := proto.Marshal(spec)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	result, err := m.db.ExecContext(ctx, `INSERT INTO jobs (priority, request) VALUES (?, ?)`, priority, req)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	intId, err := result.LastInsertId()
+	id, err = result.LastInsertId()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return &flex.JobId{IntId: intId}, nil
+	return id, nil
 }
 
-func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (status *flex.JobStatus, err error) {
+func (m *MetaStore) GetJob(ctx context.Context, id int64) (status *flex.JobStatus, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("reading a job: %w", err)
@@ -126,16 +125,16 @@ func (m *MetaStore) GetJob(ctx context.Context, id *flex.JobId) (status *flex.Jo
 	}()
 
 	var stateStr string
-	var taskUUIDPtr *string
-	var flexletPtr *string
+	var taskIDPtr *string
+	var flexletNamePtr *string
 	var req, res []byte
 	row := m.db.QueryRowContext(ctx, `
 SELECT j.state, j.task_uuid, t.flexlet, j.request, t.response
 FROM jobs j
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
 WHERE j.id = ?
-`, id.GetIntId())
-	if err := row.Scan(&stateStr, &taskUUIDPtr, &flexletPtr, &req, &res); err != nil {
+`, id)
+	if err := row.Scan(&stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
 		return nil, err
 	}
 
@@ -152,14 +151,14 @@ WHERE j.id = ?
 		return nil, err
 	}
 
-	var taskID *flex.TaskId
-	if taskUUIDPtr != nil {
-		taskID = &flex.TaskId{Uuid: *taskUUIDPtr}
+	var taskID string
+	if taskIDPtr != nil {
+		taskID = *taskIDPtr
 	}
 
-	var flexlet *flex.FlexletId
-	if flexletPtr != nil {
-		flexlet = &flex.FlexletId{Name: *flexletPtr}
+	var flexletName string
+	if flexletNamePtr != nil {
+		flexletName = *flexletNamePtr
 	}
 
 	return &flex.JobStatus{
@@ -167,24 +166,20 @@ WHERE j.id = ?
 			Id:   id,
 			Spec: &spec,
 		},
-		State:     state,
-		TaskId:    taskID,
-		FlexletId: flexlet,
-		Result:    &result,
+		State:       state,
+		TaskId:      taskID,
+		FlexletName: flexletName,
+		Result:      &result,
 	}, nil
 }
 
-func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID *flex.JobId, state flex.JobState) (statuses []*flex.JobStatus, err error) {
+func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID int64, state flex.JobState) (statuses []*flex.JobStatus, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("listing jobs: %w", err)
 		}
 	}()
 
-	b := beforeID.GetIntId()
-	if beforeID == nil {
-		b = math.MaxInt64
-	}
 	const query = `
 SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
 FROM jobs j
@@ -194,7 +189,7 @@ ORDER BY j.id DESC
 LIMIT ?
 `
 	args := []interface{}{
-		b,
+		beforeID,
 		state == flex.JobState_UNSPECIFIED,
 		formatJobState(state),
 		limit,
@@ -209,10 +204,10 @@ LIMIT ?
 	for rows.Next() {
 		var id int64
 		var stateStr string
-		var taskUUIDPtr *string
-		var flexletPtr *string
+		var taskIDPtr *string
+		var flexletNamePtr *string
 		var req, res []byte
-		if err := rows.Scan(&id, &stateStr, &taskUUIDPtr, &flexletPtr, &req, &res); err != nil {
+		if err := rows.Scan(&id, &stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
 			return nil, err
 		}
 
@@ -229,31 +224,31 @@ LIMIT ?
 			return nil, err
 		}
 
-		var taskID *flex.TaskId
-		if taskUUIDPtr != nil {
-			taskID = &flex.TaskId{Uuid: *taskUUIDPtr}
+		var taskID string
+		if taskIDPtr != nil {
+			taskID = *taskIDPtr
 		}
 
-		var flexlet *flex.FlexletId
-		if flexletPtr != nil {
-			flexlet = &flex.FlexletId{Name: *flexletPtr}
+		var flexletName string
+		if flexletNamePtr != nil {
+			flexletName = *flexletNamePtr
 		}
 
 		jobs = append(jobs, &flex.JobStatus{
 			Job: &flex.Job{
-				Id:   &flex.JobId{IntId: id},
+				Id:   id,
 				Spec: &spec,
 			},
-			State:     state,
-			TaskId:    taskID,
-			FlexletId: flexlet,
-			Result:    &result,
+			State:       state,
+			TaskId:      taskID,
+			FlexletName: flexletName,
+			Result:      &result,
 		})
 	}
 	return jobs, nil
 }
 
-func (m *MetaStore) TakeTask(ctx context.Context, flexletID *flex.FlexletId) (ref *flexletpb.TaskRef, jobSpec *flex.JobSpec, err error) {
+func (m *MetaStore) TakeTask(ctx context.Context, flexletName string) (ref *flexletpb.TaskRef, jobSpec *flex.JobSpec, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("taking a pending task: %w", err)
@@ -276,9 +271,9 @@ ORDER BY priority DESC, id ASC
 LIMIT 1
 FOR UPDATE
 `)
-	var jobIntId int64
+	var jobID int64
 	var req []byte
-	if err := row.Scan(&jobIntId, &req); err == sql.ErrNoRows {
+	if err := row.Scan(&jobID, &req); err == sql.ErrNoRows {
 		return nil, nil, ErrNoPendingTask
 	} else if err != nil {
 		return nil, nil, err
@@ -289,11 +284,11 @@ FOR UPDATE
 		return nil, nil, err
 	}
 
-	taskUUID := uuid.New().String()
+	taskID := uuid.New().String()
 
 	if _, err := tx.ExecContext(ctx, `
 INSERT INTO tasks (uuid, flexlet) VALUES (?, ?)
-`, taskUUID, flexletID.GetName()); err != nil {
+`, taskID, flexletName); err != nil {
 		return nil, nil, err
 	}
 
@@ -303,7 +298,7 @@ SET
     state = 'RUNNING',
     task_uuid = ?
 WHERE id = ?
-`, taskUUID, jobIntId); err != nil {
+`, taskID, jobID); err != nil {
 		return nil, nil, err
 	}
 
@@ -312,8 +307,8 @@ WHERE id = ?
 	}
 
 	ref = &flexletpb.TaskRef{
-		TaskId: &flex.TaskId{Uuid: taskUUID},
-		JobId:  &flex.JobId{IntId: jobIntId},
+		TaskId: taskID,
+		JobId:  jobID,
 	}
 	return ref, &spec, nil
 }
@@ -336,7 +331,7 @@ UPDATE tasks
 SET
     last_update = CURRENT_TIMESTAMP()
 WHERE uuid = ?
-`, ref.GetTaskId().GetUuid()); err != nil {
+`, ref.GetTaskId()); err != nil {
 		return err
 	}
 
@@ -374,7 +369,7 @@ UPDATE jobs
 SET
     state = ?
 WHERE id = ? AND task_uuid = ? AND state = 'RUNNING'
-`, nextState, ref.GetJobId().GetIntId(), ref.GetTaskId().GetUuid()); err != nil {
+`, nextState, ref.GetJobId(), ref.GetTaskId()); err != nil {
 		return err
 	}
 
@@ -386,7 +381,7 @@ SET
     finished = CURRENT_TIMESTAMP(),
     last_update = CURRENT_TIMESTAMP()
 WHERE uuid = ? AND state = 'RUNNING'
-`, response, ref.GetTaskId().GetUuid()); err != nil {
+`, response, ref.GetTaskId()); err != nil {
 		return err
 	}
 
@@ -396,7 +391,7 @@ WHERE uuid = ? AND state = 'RUNNING'
 	return nil
 }
 
-func (m *MetaStore) UpdateTag(ctx context.Context, tag, hash string) (err error) {
+func (m *MetaStore) UpdateTag(ctx context.Context, name, hash string) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("updating a tag: %w", err)
@@ -416,7 +411,7 @@ func (m *MetaStore) UpdateTag(ctx context.Context, tag, hash string) (err error)
 	if _, err := m.db.ExecContext(ctx, `
 INSERT INTO tags (tag, hash) VALUES (?, ?)
 ON DUPLICATE KEY UPDATE hash = ?
-`, tag, hash, hash); err != nil {
+`, name, hash, hash); err != nil {
 		return err
 	}
 
@@ -436,7 +431,7 @@ func (m *MetaStore) LookupTag(ctx context.Context, tag string) (hash string, err
 	return hash, nil
 }
 
-func (m *MetaStore) ListTags(ctx context.Context) (ids []*flex.PackageId, err error) {
+func (m *MetaStore) ListTags(ctx context.Context) (tags []*flex.Tag, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("listing tags: %w", err)
@@ -454,12 +449,12 @@ func (m *MetaStore) ListTags(ctx context.Context) (ids []*flex.PackageId, err er
 		if err := rows.Scan(&tag, &hash); err != nil {
 			return nil, err
 		}
-		ids = append(ids, &flex.PackageId{
+		tags = append(tags, &flex.Tag{
 			Hash: hash,
-			Tag:  tag,
+			Name: tag,
 		})
 	}
-	return ids, nil
+	return tags, nil
 }
 
 func (m *MetaStore) ListFlexlets(ctx context.Context) (statuses []*flex.FlexletStatus, err error) {
@@ -494,7 +489,7 @@ func (m *MetaStore) ListFlexlets(ctx context.Context) (statuses []*flex.FlexletS
 
 		statuses = append(statuses, &flex.FlexletStatus{
 			Flexlet: &flex.Flexlet{
-				Id:   &flex.FlexletId{Name: name},
+				Name: name,
 				Spec: &spec,
 			},
 			State: state,
@@ -520,7 +515,7 @@ func (m *MetaStore) UpdateFlexlet(ctx context.Context, status *flex.FlexletStatu
 	if _, err := m.db.ExecContext(ctx, `
 INSERT INTO flexlets (name, state, cores, data) VALUES (?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE state = ?, cores = ?, data = ?, last_update = CURRENT_TIMESTAMP()
-`, status.GetFlexlet().GetId().GetName(), stateStr, cores, data, stateStr, cores, data); err != nil {
+`, status.GetFlexlet().GetName(), stateStr, cores, data, stateStr, cores, data); err != nil {
 		return err
 	}
 	return nil

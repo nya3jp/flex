@@ -1,12 +1,12 @@
 {{ template "base" . }}
 
 {{ define "title" -}}
-Job {{ .Job.GetJob.GetId.GetIntId }}
+Job {{ .Job.GetJob.GetId }}
 {{- end }}
 
 {{ define "main" -}}
 <h1>
-  Job {{ .Job.GetJob.GetId.GetIntId }}
+  Job {{ .Job.GetJob.GetId }}
 
   {{ if eq .Job.GetState.String "PENDING" }}
   <span class="badge bg-secondary" style="font-size: 0.75rem">Pending</span>
@@ -27,7 +27,7 @@ Job {{ .Job.GetJob.GetId.GetIntId }}
   <tbody>
   <tr>
     <th scope="row">ID</th>
-    <td>{{ .Job.GetJob.GetId.GetIntId }}</td>
+    <td>{{ .Job.GetJob.GetId }}</td>
   </tr>
   <tr>
     <th scope="row">Command</th>
@@ -40,9 +40,9 @@ Job {{ .Job.GetJob.GetId.GetIntId }}
       <ul class="list-unstyled mb-0">
         {{ range .Job.GetJob.GetSpec.GetInputs.GetPackages }}
         <li>
-          {{ .GetId.GetHash }}
-          {{ if .GetId.GetTag }}
-          (<a href="/packages/{{ .GetId.GetTag }}/">{{ .GetId.GetTag }}</a>)
+          {{ .GetHash }}
+          {{ if .GetTag }}
+          (<a href="/packages/{{ .GetTag }}/">{{ .GetTag }}</a>)
           {{ end }}
         </li>
         {{ end }}

@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/internal/hashutil"
 	"github.com/urfave/cli/v2"
 )
 
@@ -60,7 +61,7 @@ var cmdPackageCreate = &cli.Command{
 				return err
 			}
 			for _, tag := range c.StringSlice("tag") {
-				if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: tag, Hash: hash}); err != nil {
+				if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: &flex.Tag{Name: tag, Hash: hash}}); err != nil {
 					return err
 				}
 			}
@@ -80,7 +81,7 @@ var cmdPackageTag = &cli.Command{
 		}
 		tag, hash := c.Args().Get(0), c.Args().Get(1)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: tag, Hash: hash}); err != nil {
+			if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: &flex.Tag{Name: tag, Hash: hash}}); err != nil {
 				return err
 			}
 			fmt.Printf("%s\t%s\n", tag, hash)
@@ -99,7 +100,13 @@ var cmdPackageInfo = &cli.Command{
 		}
 		name := c.Args().Get(0)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			res, err := cl.GetPackage(ctx, &flex.GetPackageRequest{Id: packageIDFor(name)})
+			var req *flex.GetPackageRequest
+			if hashutil.IsStdHash(name) {
+				req = &flex.GetPackageRequest{Type: &flex.GetPackageRequest_Hash{Hash: name}}
+			} else {
+				req = &flex.GetPackageRequest{Type: &flex.GetPackageRequest_Tag{Tag: name}}
+			}
+			res, err := cl.GetPackage(ctx, req)
 			if err != nil {
 				return err
 			}
@@ -124,7 +131,7 @@ var cmdPackageList = &cli.Command{
 				return err
 			}
 			for _, tag := range res.GetTags() {
-				fmt.Printf("%s\t%s\n", tag.GetTag(), tag.GetHash())
+				fmt.Printf("%s\t%s\n", tag.GetName(), tag.GetHash())
 			}
 			return nil
 		})

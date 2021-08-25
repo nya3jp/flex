@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	"github.com/nya3jp/flex/internal/flexletpb"
@@ -84,12 +83,12 @@ func main() {
 
 				grp, ctx := errgroup.WithContext(ctx)
 				for i := 0; i < replicas; i++ {
-					flexletID := &flex.FlexletId{Name: name}
+					replicaName := name
 					if replicas > 1 {
-						flexletID.Name += fmt.Sprintf(".%d", i)
+						replicaName += fmt.Sprintf(".%d", i)
 					}
 					grp.Go(func() error {
-						return flexlet.Run(ctx, cl, runner, flexletID, cores)
+						return flexlet.Run(ctx, cl, runner, replicaName, cores)
 					})
 				}
 				return grp.Wait()
