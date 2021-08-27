@@ -34,6 +34,9 @@ import (
 
 func newDualHandler(grpcServer *grpc.Server) http.Handler {
 	fallbackMux := http.NewServeMux()
+	fallbackMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "ok")
+	})
 	fallbackMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "ok")
 	})

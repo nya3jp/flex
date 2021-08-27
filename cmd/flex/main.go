@@ -28,7 +28,6 @@ var app = &cli.App{
 	Usage: "Flex CLI client",
 	Flags: []cli.Flag{
 		flagHub,
-		flagInsecure,
 		flagPassword,
 	},
 	HideHelpCommand: true,

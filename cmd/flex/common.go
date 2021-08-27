@@ -35,14 +35,8 @@ const exitCodeHelp = 2
 var flagHub = &cli.StringFlag{
 	Name:    "hub",
 	Aliases: []string{"h"},
-	Value:   "localhost:7111",
-	Usage:   "Specifies a flexhub address in host:port format.",
-}
-
-var flagInsecure = &cli.BoolFlag{
-	Name:    "insecure",
-	Aliases: []string{"I"},
-	Usage:   "Allows insecure connections to flexhub servers.",
+	Value:   "http://localhost:7111",
+	Usage:   "Specifies a flexhub URL.",
 }
 
 var flagPassword = &cli.StringFlag{
@@ -53,11 +47,10 @@ var flagPassword = &cli.StringFlag{
 
 func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClient) error) error {
 	ctx := c.Context
-	hubAddr := c.String(flagHub.Name)
-	insecure := c.Bool(flagInsecure.Name)
+	hubURL := c.String(flagHub.Name)
 	password := c.String(flagPassword.Name)
 
-	cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
+	cc, err := grpcutil.DialContext(ctx, hubURL, password)
 	if err != nil {
 		return err
 	}

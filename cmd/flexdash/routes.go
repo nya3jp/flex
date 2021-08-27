@@ -52,12 +52,14 @@ const (
 
 type baseValues struct {
 	Section section
+	HubURL  string
 }
 
 type indexValues struct {
 	Base       baseValues
 	Stats      *flex.Stats
 	TotalCores int64
+	HubURL     string
 }
 
 type jobsValues struct {
@@ -118,7 +120,8 @@ func readJobOutput(ctx context.Context, cl flex.FlexServiceClient, id int64, t f
 }
 
 type server struct {
-	cl flex.FlexServiceClient
+	cl     flex.FlexServiceClient
+	hubURL string
 }
 
 func (s *server) handleIndex(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -130,7 +133,7 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request, p httproute
 
 		stats := res.GetStats()
 		values := &indexValues{
-			Base:       baseValues{Section: sectionIndex},
+			Base:       baseValues{Section: sectionIndex, HubURL: s.hubURL},
 			Stats:      stats,
 			TotalCores: stats.GetFlexlet().GetIdleCores() + stats.GetFlexlet().GetBusyCores(),
 		}
@@ -158,7 +161,7 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 			nextBeforeJobID = jobs[len(jobs)-1].GetJob().GetId()
 		}
 		values := &jobsValues{
-			Base:            baseValues{Section: sectionJobs},
+			Base:            baseValues{Section: sectionJobs, HubURL: s.hubURL},
 			Jobs:            jobs,
 			NextBeforeJobID: nextBeforeJobID,
 		}
@@ -206,7 +209,7 @@ func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.
 		}
 
 		values := &jobValues{
-			Base:        baseValues{Section: sectionJobs},
+			Base:        baseValues{Section: sectionJobs, HubURL: s.hubURL},
 			Job:         job,
 			Stdout:      stdout,
 			StdoutError: stdoutError,
@@ -226,7 +229,7 @@ func (s *server) handleFlexlets(w http.ResponseWriter, r *http.Request, p httpro
 		}
 
 		values := &flexletsValues{
-			Base:     baseValues{Section: sectionFlexlets},
+			Base:     baseValues{Section: sectionFlexlets, HubURL: s.hubURL},
 			Flexlets: res.GetFlexlets(),
 		}
 		renderHTML(w, templateFlexlets, values)
@@ -234,8 +237,11 @@ func (s *server) handleFlexlets(w http.ResponseWriter, r *http.Request, p httpro
 	})
 }
 
-func newRouter(cl flex.FlexServiceClient) *httprouter.Router {
-	srv := &server{cl: cl}
+func newRouter(cl flex.FlexServiceClient, hubURL string) *httprouter.Router {
+	srv := &server{
+		cl:     cl,
+		hubURL: hubURL,
+	}
 	router := httprouter.New()
 	router.GET("/", srv.handleIndex)
 	router.GET("/jobs/", srv.handleJobs)

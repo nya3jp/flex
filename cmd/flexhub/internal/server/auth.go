@@ -33,7 +33,7 @@ func makeAuthFunc(password string) grpc_auth.AuthFunc {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 		}
 		if p != password {
-			return nil, status.Errorf(codes.PermissionDenied, "wrong auth token")
+			return nil, status.Errorf(codes.PermissionDenied, "wrong password")
 		}
 		return ctx, nil
 	}

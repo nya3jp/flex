@@ -45,19 +45,17 @@ func main() {
 			Usage: "Flex Dashboard",
 			Flags: []cli.Flag{
 				&cli.IntFlag{Name: "port", Value: defaultPort, Usage: "TCP port to listen on"},
-				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
-				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
+				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flex service password"},
 			},
 			Action: func(c *cli.Context) error {
 				port := c.Int("port")
-				hubAddr := c.String("hub")
-				insecure := c.Bool("insecure")
+				hubURL := c.String("hub")
 				password := c.String("password")
 
 				ctx := c.Context
 
-				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
+				cc, err := grpcutil.DialContext(ctx, hubURL, password)
 				if err != nil {
 					return err
 				}
@@ -65,7 +63,7 @@ func main() {
 
 				server := http.Server{
 					Addr:        fmt.Sprintf("0.0.0.0:%d", port),
-					Handler:     newRouter(cl),
+					Handler:     newRouter(cl, hubURL),
 					BaseContext: func(net.Listener) context.Context { return ctx },
 				}
 				go func() {

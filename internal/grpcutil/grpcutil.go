@@ -18,29 +18,58 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
+	"fmt"
+	"net"
+	"net/url"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func DialContext(ctx context.Context, addr string, insecure bool, password string) (*grpc.ClientConn, error) {
-	var opts []grpc.DialOption
-	if insecure {
-		opts = append(opts, grpc.WithAuthority(addr), grpc.WithInsecure())
-	} else {
-		pool, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-		creds := credentials.NewTLS(&tls.Config{RootCAs: pool})
-		opts = append(opts, grpc.WithTransportCredentials(creds))
+func DialContext(ctx context.Context, serverURL string, password string) (*grpc.ClientConn, error) {
+	host, opts, err := parseServerURL(serverURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid gRPC server URL: %w", err)
 	}
-
 	if password != "" {
 		opts = append(opts, grpc.WithPerRPCCredentials(&passwordCredentials{password}))
 	}
+	return grpc.DialContext(ctx, host, opts...)
+}
 
-	return grpc.DialContext(ctx, addr, opts...)
+func parseServerURL(serverURL string) (host string, opts []grpc.DialOption, err error) {
+	parsed, err := url.Parse(serverURL)
+	if err != nil {
+		return "", nil, err
+	}
+	if strings.Trim(parsed.Path, "/") != "" {
+		return "", nil, errors.New("path must be empty")
+	}
+
+	switch parsed.Scheme {
+	case "http":
+		opts := []grpc.DialOption{grpc.WithAuthority(parsed.Host), grpc.WithInsecure()}
+		return hostWithDefaultPort(parsed.Host, 80), opts, nil
+	case "https":
+		pool, err := x509.SystemCertPool()
+		if err != nil {
+			return "", nil, err
+		}
+		creds := credentials.NewTLS(&tls.Config{RootCAs: pool})
+		opts := []grpc.DialOption{grpc.WithTransportCredentials(creds)}
+		return hostWithDefaultPort(parsed.Host, 443), opts, nil
+	default:
+		return "", nil, errors.New("scheme must be https or http")
+	}
+}
+
+func hostWithDefaultPort(host string, defaultPort int) string {
+	if _, _, err := net.SplitHostPort(host); err != nil {
+		return fmt.Sprintf("%s:%d", host, defaultPort)
+	}
+	return host
 }
 
 type passwordCredentials struct {

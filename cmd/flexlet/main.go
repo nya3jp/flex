@@ -53,8 +53,7 @@ func main() {
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: "name", Value: hostName, Usage: "Flexlet name"},
 				&cli.IntFlag{Name: "cores", Value: runtime.NumCPU(), Usage: "Number of available cores"},
-				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
-				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
+				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flexlet service password"},
 				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
@@ -62,8 +61,7 @@ func main() {
 			Action: func(c *cli.Context) error {
 				name := c.String("name")
 				cores := c.Int("cores")
-				hubAddr := c.String("hub")
-				insecure := c.Bool("insecure")
+				hubURL := c.String("hub")
 				storeDir := c.String("storedir")
 				password := c.String("password")
 				replicas := c.Int("replicas-for-load-testing")
@@ -73,7 +71,7 @@ func main() {
 					return err
 				}
 
-				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
+				cc, err := grpcutil.DialContext(ctx, hubURL, password)
 				if err != nil {
 					return err
 				}
