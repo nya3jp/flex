@@ -43,6 +43,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			f, err := os.Open(path)
+			if os.IsNotExist(err) {
+				http.Error(w, "File not found", http.StatusNotFound)
+				return nil
+			}
 			if err != nil {
 				return err
 			}
@@ -60,6 +64,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		case http.MethodHead:
 			fi, err := os.Stat(path)
+			if os.IsNotExist(err) {
+				w.WriteHeader(http.StatusNotFound)
+				return nil
+			}
 			if err != nil {
 				return err
 			}
