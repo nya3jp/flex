@@ -86,9 +86,11 @@ func respond(w http.ResponseWriter, r *http.Request, f func(ctx context.Context)
 	}
 }
 
-func renderHTML(w http.ResponseWriter, tmpl *template.Template, values interface{}) error {
+func renderHTML(w http.ResponseWriter, tmpl *template.Template, values interface{}) {
 	w.Header().Set("Content-Type", "text/html")
-	return tmpl.Execute(w, values)
+	if err := tmpl.Execute(w, values); err != nil {
+		fmt.Fprintf(w, "ERROR: %v", err)
+	}
 }
 
 func readJobOutput(ctx context.Context, cl flex.FlexServiceClient, id *flex.JobId, t flex.GetJobOutputRequest_JobOutputType) (string, error) {
@@ -132,7 +134,8 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request, p httproute
 			Stats:      stats,
 			TotalCores: stats.GetFlexlet().GetIdleCores() + stats.GetFlexlet().GetBusyCores(),
 		}
-		return renderHTML(w, templateIndex, values)
+		renderHTML(w, templateIndex, values)
+		return nil
 	})
 }
 
@@ -159,7 +162,8 @@ func (s *server) handleJobs(w http.ResponseWriter, r *http.Request, p httprouter
 			Jobs:            jobs,
 			NextBeforeJobID: nextBeforeJobID,
 		}
-		return renderHTML(w, templateJobs, values)
+		renderHTML(w, templateJobs, values)
+		return nil
 	})
 }
 
@@ -210,7 +214,8 @@ func (s *server) handleJob(w http.ResponseWriter, r *http.Request, p httprouter.
 			Stderr:      stderr,
 			StderrError: stderrError,
 		}
-		return renderHTML(w, templateJob, values)
+		renderHTML(w, templateJob, values)
+		return nil
 	})
 }
 
@@ -225,7 +230,8 @@ func (s *server) handleFlexlets(w http.ResponseWriter, r *http.Request, p httpro
 			Base:     baseValues{Section: sectionFlexlets},
 			Flexlets: res.GetFlexlets(),
 		}
-		return renderHTML(w, templateFlexlets, values)
+		renderHTML(w, templateFlexlets, values)
+		return nil
 	})
 }
 
