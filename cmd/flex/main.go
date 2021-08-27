@@ -30,7 +30,6 @@ var app = &cli.App{
 		flagHub,
 		flagInsecure,
 		flagPassword,
-		flagPasswordFromFile,
 	},
 	HideHelpCommand: true,
 	Commands: []*cli.Command{

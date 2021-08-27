@@ -49,16 +49,16 @@ func newDualHandler(grpcServer *grpc.Server) http.Handler {
 	return h2cHandler
 }
 
-func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwords *Passwords) error {
+func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, password string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	grpcServer := grpc.NewServer(
-		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(defaultAuthFunc)),
-		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(defaultAuthFunc)),
+		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(makeAuthFunc(password))),
+		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(makeAuthFunc(password))),
 	)
-	flex.RegisterFlexServiceServer(grpcServer, newFlexServer(meta, fs, passwords.Flex))
-	flexletpb.RegisterFlexletServiceServer(grpcServer, newFlexletServer(meta, fs, passwords.Flexlet))
+	flex.RegisterFlexServiceServer(grpcServer, newFlexServer(meta, fs))
+	flexletpb.RegisterFlexletServiceServer(grpcServer, newFlexletServer(meta, fs))
 
 	httpServer := &http.Server{
 		Addr:        fmt.Sprintf("0.0.0.0:%d", port),

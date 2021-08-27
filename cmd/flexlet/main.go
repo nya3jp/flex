@@ -57,7 +57,6 @@ func main() {
 				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flexlet service password"},
-				&cli.StringFlag{Name: "password-from-file", Usage: "Reads a Flexlet service password from a file"},
 				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
 			},
 			Action: func(c *cli.Context) error {
@@ -67,7 +66,6 @@ func main() {
 				insecure := c.Bool("insecure")
 				storeDir := c.String("storedir")
 				password := c.String("password")
-				passwordFile := c.String("password-from-file")
 				replicas := c.Int("replicas-for-load-testing")
 
 				runner, err := run.New(storeDir)
@@ -75,7 +73,7 @@ func main() {
 					return err
 				}
 
-				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password, passwordFile)
+				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
 				if err != nil {
 					return err
 				}

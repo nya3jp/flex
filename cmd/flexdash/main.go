@@ -48,18 +48,16 @@ func main() {
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub address"},
 				&cli.BoolFlag{Name: "insecure", Usage: "Use insecure connections to Flexhub servers"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flex service password"},
-				&cli.StringFlag{Name: "password-from-file", Usage: "Reads a Flex service password from a file"},
 			},
 			Action: func(c *cli.Context) error {
 				port := c.Int("port")
 				hubAddr := c.String("hub")
 				insecure := c.Bool("insecure")
 				password := c.String("password")
-				passwordFile := c.String("password-from-file")
 
 				ctx := c.Context
 
-				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password, passwordFile)
+				cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
 				if err != nil {
 					return err
 				}

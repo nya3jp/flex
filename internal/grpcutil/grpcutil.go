@@ -18,26 +18,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
-	"os"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func DialContext(ctx context.Context, addr string, insecure bool, password, passwordFile string) (*grpc.ClientConn, error) {
-	if password != "" && passwordFile != "" {
-		return nil, errors.New("duplicated password flags")
-	}
-	if passwordFile != "" {
-		b, err := os.ReadFile(passwordFile)
-		if err != nil {
-			return nil, err
-		}
-		password = strings.TrimSpace(string(b))
-	}
-
+func DialContext(ctx context.Context, addr string, insecure bool, password string) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	if insecure {
 		opts = append(opts, grpc.WithAuthority(addr), grpc.WithInsecure())

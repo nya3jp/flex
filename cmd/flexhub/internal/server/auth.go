@@ -16,41 +16,25 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type Passwords struct {
-	Flex    string `json:"flex"`
-	Flexlet string `json:"flexlet"`
-}
+func makeAuthFunc(password string) grpc_auth.AuthFunc {
+	return func(ctx context.Context) (context.Context, error) {
+		if password == "" {
+			return ctx, nil
+		}
 
-type authMixin struct {
-	password string
-}
-
-func newAuthMixin(password string) *authMixin {
-	return &authMixin{password: password}
-}
-
-func (a *authMixin) AuthFuncOverride(ctx context.Context, _ string) (context.Context, error) {
-	if a.password == "" {
+		p, err := grpc_auth.AuthFromMD(ctx, "Bearer")
+		if err != nil {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+		}
+		if p != password {
+			return nil, status.Errorf(codes.PermissionDenied, "wrong auth token")
+		}
 		return ctx, nil
 	}
-
-	password, err := grpc_auth.AuthFromMD(ctx, "Bearer")
-	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
-	}
-	if password != a.password {
-		return nil, status.Errorf(codes.PermissionDenied, "wrong auth token")
-	}
-	return ctx, nil
-}
-
-func defaultAuthFunc(ctx context.Context) (context.Context, error) {
-	return nil, errors.New("auth not configured")
 }

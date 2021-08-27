@@ -32,16 +32,14 @@ import (
 
 type flexServer struct {
 	flex.UnimplementedFlexServiceServer
-	*authMixin
 	meta *database.MetaStore
 	fs   FS
 }
 
-func newFlexServer(meta *database.MetaStore, fs FS, password string) *flexServer {
+func newFlexServer(meta *database.MetaStore, fs FS) *flexServer {
 	return &flexServer{
-		authMixin: newAuthMixin(password),
-		meta:      meta,
-		fs:        fs,
+		meta: meta,
+		fs:   fs,
 	}
 }
 

@@ -51,19 +51,13 @@ var flagPassword = &cli.StringFlag{
 	Usage:   "Sets a Flexlet service password.",
 }
 
-var flagPasswordFromFile = &cli.StringFlag{
-	Name:  "password-from-file",
-	Usage: "Reads a Flexlet service password from a file.",
-}
-
 func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClient) error) error {
 	ctx := c.Context
 	hubAddr := c.String(flagHub.Name)
 	insecure := c.Bool(flagInsecure.Name)
 	password := c.String(flagPassword.Name)
-	passwordFile := c.String(flagPasswordFromFile.Name)
 
-	cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password, passwordFile)
+	cc, err := grpcutil.DialContext(ctx, hubAddr, insecure, password)
 	if err != nil {
 		return err
 	}
