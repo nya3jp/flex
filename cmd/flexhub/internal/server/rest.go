@@ -18,6 +18,7 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/grpcutil"
@@ -40,6 +41,7 @@ type restServer struct {
 func newRESTServer(cl flex.FlexServiceClient) *restServer {
 	engine := gin.New()
 	s := &restServer{cl: cl, engine: engine}
+	engine.Use(cors.Default()) // allow all CORS requests
 	engine.GET("/", s.handleOK)
 	engine.GET("/healthz", s.handleOK)
 	engine.GET("/api/jobs", s.handleAPIJobs)
