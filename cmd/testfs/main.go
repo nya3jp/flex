@@ -37,6 +37,10 @@ type handler struct {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+
 	hash := hex.EncodeToString(hashutil.NewStdHash().Sum([]byte(r.URL.Path)))
 	path := filepath.Join(h.tmpDir, hash)
 	if err := func() error {
