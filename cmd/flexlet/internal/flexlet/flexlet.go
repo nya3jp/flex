@@ -92,7 +92,7 @@ func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, f
 		if err == nil {
 			return task, nil
 		}
-		if s, ok := status.FromError(err); ok && s.Code() == codes.DeadlineExceeded {
+		if s, ok := status.FromError(err); ok && (s.Code() == codes.DeadlineExceeded || s.Code() == codes.Canceled) {
 			continue
 		}
 		log.Printf("WARNING: WaitTask failed: %v", err)

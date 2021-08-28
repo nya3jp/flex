@@ -23,6 +23,8 @@ import (
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/flexletpb"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type TaskQueue struct {
@@ -43,7 +45,7 @@ func (q *TaskQueue) WaitTask(ctx context.Context, flexletName string) (*flexletp
 	select {
 	case <-q.waitLock:
 	case <-ctx.Done():
-		return nil, nil, ctx.Err()
+		return nil, nil, fixError(ctx, ctx.Err())
 	}
 	defer func() { q.waitLock <- struct{}{} }()
 
@@ -54,8 +56,19 @@ func (q *TaskQueue) WaitTask(ctx context.Context, flexletName string) (*flexletp
 			continue
 		}
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fixError(ctx, err)
 		}
 		return taskID, spec, nil
+	}
+}
+
+func fixError(ctx context.Context, err error) error {
+	switch ctx.Err() {
+	case context.DeadlineExceeded:
+		return status.Error(codes.DeadlineExceeded, context.DeadlineExceeded.Error())
+	case context.Canceled:
+		return status.Error(codes.Canceled, context.Canceled.Error())
+	default:
+		return err
 	}
 }
