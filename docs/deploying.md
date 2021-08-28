@@ -23,9 +23,6 @@ gcloud projects add-iam-policy-binding "${PROJECT}" --member="serviceAccount:fle
 docker pull ghcr.io/nya3jp/flexhub
 docker tag ghcr.io/nya3jp/flexhub gcr.io/${PROJECT}/flexhub
 docker push gcr.io/${PROJECT}/flexhub
-docker pull ghcr.io/nya3jp/flexdash
-docker tag ghcr.io/nya3jp/flexdash gcr.io/${PROJECT}/flexdash
-docker push gcr.io/${PROJECT}/flexdash
 
 # Create a MySQL instance
 gcloud sql instances create "${DB_INSTANCE_NAME}" \
@@ -52,15 +49,4 @@ gcloud beta run deploy \
     --service-account="flexhub@${PROJECT}.iam.gserviceaccount.com" \
     --add-cloudsql-instances="${PROJECT}:${REGION}:${DB_INSTANCE_NAME}" \
     flexhub
-
-# Deploy Flexdash to Cloud Run
-FLEXHUB_URL="$(gcloud run services describe flexhub --region="${REGION}" --format='value(status.url)')"
-gcloud beta run deploy \
-    --region="${REGION}" \
-    --image="gcr.io/${PROJECT}/flexdash" \
-    --args="--hub=${FLEXHUB_URL},--password=${FLEX_PASSWORD}" \
-    --ingress=all \
-    --allow-unauthenticated \
-    --min-instances=0 \
-    flexdash
 ```
