@@ -1,0 +1,26 @@
+{
+  "name": "flex-client",
+  "version": "0.1.0",
+  "description": "Flex client",
+  "author": "Shuhei Takahashi",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/nya3jp/flex/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nya3jp/flex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nya3jp/flex/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "typescript": "^4.4.2"
+  }
+}
