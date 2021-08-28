@@ -17,7 +17,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -32,21 +31,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-func newDualHandler(grpcServer *grpc.Server) http.Handler {
-	fallbackMux := http.NewServeMux()
-	fallbackMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "ok")
-	})
-	fallbackMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "ok")
-	})
-
+func newDualHandler(grpcServer *grpc.Server, restServer http.Handler) http.Handler {
 	splitHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.HasPrefix(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 			return
 		}
-		fallbackMux.ServeHTTP(w, r)
+		restServer.ServeHTTP(w, r)
 	})
 	h2cHandler := h2c.NewHandler(splitHandler, &http2.Server{})
 	return h2cHandler
@@ -63,9 +54,11 @@ func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwor
 	flex.RegisterFlexServiceServer(grpcServer, newFlexServer(meta, fs))
 	flexletpb.RegisterFlexletServiceServer(grpcServer, newFlexletServer(meta, fs))
 
+	restServer := newRESTServer(grpcServer)
+
 	httpServer := &http.Server{
 		Addr:        fmt.Sprintf("0.0.0.0:%d", port),
-		Handler:     newDualHandler(grpcServer),
+		Handler:     newDualHandler(grpcServer, restServer),
 		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
 
