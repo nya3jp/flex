@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"strings"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/internal/flexletpb"
@@ -59,10 +58,7 @@ func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwor
 	}
 	defer cc.Close()
 
-	grpcServer := grpc.NewServer(
-		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(makeAuthFunc(password))),
-		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(makeAuthFunc(password))),
-	)
+	grpcServer := grpc.NewServer(makeAuthOptions(password)...)
 	flex.RegisterFlexServiceServer(grpcServer, newFlexServer(meta, fs))
 	flexletpb.RegisterFlexletServiceServer(grpcServer, newFlexletServer(meta, fs))
 

@@ -16,25 +16,59 @@ package server
 
 import (
 	"context"
+	"errors"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-func makeAuthFunc(password string) grpc_auth.AuthFunc {
-	return func(ctx context.Context) (context.Context, error) {
+var anonymousAllowedMethods = map[string]struct{}{
+	"/flex.FlexService/GetJob":       {},
+	"/flex.FlexService/GetJobOutput": {},
+	"/flex.FlexService/GetPackage":   {},
+	"/flex.FlexService/GetStats":     {},
+	"/flex.FlexService/ListFlexlets": {},
+	"/flex.FlexService/ListJobs":     {},
+	"/flex.FlexService/ListTags":     {},
+}
+
+func makeAuthOptions(password string) []grpc.ServerOption {
+	authenticate := func(ctx context.Context, method string) error {
 		if password == "" {
-			return ctx, nil
+			return nil
+		}
+		if _, ok := anonymousAllowedMethods[method]; ok {
+			return nil
 		}
 
-		p, err := grpc_auth.AuthFromMD(ctx, "Bearer")
-		if err != nil {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return errors.New("metadata unavailable")
 		}
-		if p != password {
-			return nil, status.Errorf(codes.PermissionDenied, "wrong password")
+		auths := md.Get("authorization")
+		if len(auths) == 0 {
+			return status.Error(codes.Unauthenticated, "authentication required")
 		}
-		return ctx, nil
+		if auths[0] != "Bearer "+password {
+			return status.Error(codes.PermissionDenied, "wrong password")
+		}
+		return nil
+	}
+
+	return []grpc.ServerOption{
+		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (res interface{}, err error) {
+			if err := authenticate(ctx, info.FullMethod); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		}),
+		grpc.StreamInterceptor(func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			if err := authenticate(stream.Context(), info.FullMethod); err != nil {
+				return err
+			}
+			return handler(srv, stream)
+		}),
 	}
 }
