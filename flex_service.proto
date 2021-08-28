@@ -78,6 +78,7 @@ message ListJobsRequest {
   int64 limit = 1;
   int64 before_id = 2;
   JobState state = 3;
+  string label = 4;
 }
 
 message ListJobsResponse {

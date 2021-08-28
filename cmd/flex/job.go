@@ -37,19 +37,25 @@ import (
 var flagPriority = &cli.IntFlag{
 	Name:  "priority",
 	Value: 0,
-	Usage: "Sets the priority of the new task. Higher values are higher priority.",
+	Usage: "Sets the priority of the new job. Higher values are higher priority.",
 }
 
 var flagFile = &cli.StringSliceFlag{
 	Name:    "file",
 	Aliases: []string{"f"},
-	Usage:   "Adds a file or directory to the one-off package for the task. Can be repeated.",
+	Usage:   "Adds a file or directory to the one-off package for the job. Can be repeated.",
 }
 
 var flagPackage = &cli.StringSliceFlag{
 	Name:    "package",
 	Aliases: []string{"p"},
-	Usage:   "Adds a package to the task. Can be repeated.",
+	Usage:   "Adds a package to the job. Can be repeated.",
+}
+
+var flagAddLabel = &cli.StringSliceFlag{
+	Name:    "label",
+	Aliases: []string{"l"},
+	Usage:   "Adds a label to the job. Can be repeated.",
 }
 
 var flagShell = &cli.BoolFlag{
@@ -62,7 +68,7 @@ var flagTimeLimit = &cli.DurationFlag{
 	Name:    "time-limit",
 	Aliases: []string{"t"},
 	Value:   time.Minute,
-	Usage:   "Sets the time limit of the task.",
+	Usage:   "Sets the time limit of the job.",
 }
 
 var flagLimit = &cli.Int64Flag{
@@ -85,12 +91,19 @@ var flagState = &cli.StringFlag{
 	Usage:   "Filters jobs by state. Allowed values are: pending, running, finished.",
 }
 
+var flagLabel = &cli.StringFlag{
+	Name:    "label",
+	Aliases: []string{"l"},
+	Usage:   "Filters jobs by label.",
+}
+
 var jobCreateFlags = []cli.Flag{
 	flagFile,
 	flagPackage,
 	flagShell,
 	flagTimeLimit,
 	flagPriority,
+	flagAddLabel,
 }
 
 var cmdJob = &cli.Command{
@@ -234,11 +247,13 @@ var cmdJobList = &cli.Command{
 		flagLimit,
 		flagBefore,
 		flagState,
+		flagLabel,
 	},
 	Action: func(c *cli.Context) error {
 		limit := c.Int64(flagLimit.Name)
 		beforeID := c.Int64(flagBefore.Name)
 		stateStr := c.String(flagState.Name)
+		label := c.String(flagLabel.Name)
 		if c.NArg() > 0 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
@@ -262,6 +277,7 @@ var cmdJobList = &cli.Command{
 				Limit:    limit,
 				BeforeId: beforeID,
 				State:    state,
+				Label:    label,
 			})
 			if err != nil {
 				return err
@@ -295,6 +311,7 @@ func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, a
 	files := c.StringSlice(flagFile.Name)
 	packages := c.StringSlice(flagPackage.Name)
 	timeLimit := c.Duration(flagTimeLimit.Name)
+	labels := c.StringSlice(flagAddLabel.Name)
 
 	if len(files) > 0 {
 		hash, err := ensurePackage(ctx, cl, files)
@@ -327,6 +344,9 @@ func submitJob(ctx context.Context, cl flex.FlexServiceClient, c *cli.Context, a
 		},
 		Constraints: &flex.JobConstraints{
 			Priority: int32(priority),
+		},
+		Annotations: &flex.JobAnnotations{
+			Labels: labels,
 		},
 	}
 	res, err := cl.SubmitJob(ctx, &flex.SubmitJobRequest{Spec: spec})

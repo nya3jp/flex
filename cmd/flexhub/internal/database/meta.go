@@ -104,13 +104,29 @@ func (m *MetaStore) InsertJob(ctx context.Context, spec *flex.JobSpec) (id int64
 		return 0, err
 	}
 
-	result, err := m.db.ExecContext(ctx, `INSERT INTO jobs (priority, request) VALUES (?, ?)`, priority, req)
+	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, `INSERT INTO jobs (priority, request) VALUES (?, ?)`, priority, req)
 	if err != nil {
 		return 0, err
 	}
 
 	id, err = result.LastInsertId()
 	if err != nil {
+		return 0, err
+	}
+
+	for _, label := range spec.GetAnnotations().GetLabels() {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO labels (job_id, label) VALUES (?, ?)`, id, label); err != nil {
+			return 0, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
@@ -124,63 +140,38 @@ func (m *MetaStore) GetJob(ctx context.Context, id int64) (status *flex.JobStatu
 		}
 	}()
 
-	var stateStr string
-	var taskIDPtr *string
-	var flexletNamePtr *string
-	var req, res []byte
-	row := m.db.QueryRowContext(ctx, `
-SELECT j.state, j.task_uuid, t.flexlet, j.request, t.response
+	rows, err := m.db.QueryContext(ctx, `
+SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
 FROM jobs j
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
 WHERE j.id = ?
 `, id)
-	if err := row.Scan(&stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
-		return nil, err
-	}
-
-	var spec flex.JobSpec
-	if err := proto.Unmarshal(req, &spec); err != nil {
-		return nil, err
-	}
-	var result flex.TaskResult
-	if err := proto.Unmarshal(res, &result); err != nil {
-		return nil, err
-	}
-	state, err := parseJobState(stateStr)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	var taskID string
-	if taskIDPtr != nil {
-		taskID = *taskIDPtr
+	statuses, err := scanJobStatuses(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(statuses) == 0 {
+		return nil, fmt.Errorf("job %d not found", id)
 	}
 
-	var flexletName string
-	if flexletNamePtr != nil {
-		flexletName = *flexletNamePtr
-	}
-
-	return &flex.JobStatus{
-		Job: &flex.Job{
-			Id:   id,
-			Spec: &spec,
-		},
-		State:       state,
-		TaskId:      taskID,
-		FlexletName: flexletName,
-		Result:      &result,
-	}, nil
+	return statuses[0], nil
 }
 
-func (m *MetaStore) ListJobs(ctx context.Context, limit int64, beforeID int64, state flex.JobState) (statuses []*flex.JobStatus, err error) {
+func (m *MetaStore) ListJobs(ctx context.Context, state flex.JobState, label string, limit int64, beforeID int64) (statuses []*flex.JobStatus, err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("listing jobs: %w", err)
 		}
 	}()
 
-	const query = `
+	query, args := func() (string, []interface{}) {
+		if label == "" {
+			const query = `
 SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
 FROM jobs j
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
@@ -188,64 +179,41 @@ WHERE j.id < ? AND (? OR j.state = ?)
 ORDER BY j.id DESC
 LIMIT ?
 `
-	args := []interface{}{
-		beforeID,
-		state == flex.JobState_UNSPECIFIED,
-		formatJobState(state),
-		limit,
-	}
+			args := []interface{}{
+				beforeID,
+				state == flex.JobState_UNSPECIFIED,
+				formatJobState(state),
+				limit,
+			}
+			return query, args
+		}
+
+		const query = `
+SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
+FROM labels l
+	INNER JOIN jobs j ON (l.job_id = j.id)
+    LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
+WHERE l.label = ? AND l.job_id < ? AND (? OR j.state = ?)
+ORDER BY l.job_id DESC
+LIMIT ?
+`
+		args := []interface{}{
+			label,
+			beforeID,
+			state == flex.JobState_UNSPECIFIED,
+			formatJobState(state),
+			limit,
+		}
+		return query, args
+	}()
+
 	rows, err := m.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var jobs []*flex.JobStatus
-	for rows.Next() {
-		var id int64
-		var stateStr string
-		var taskIDPtr *string
-		var flexletNamePtr *string
-		var req, res []byte
-		if err := rows.Scan(&id, &stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
-			return nil, err
-		}
-
-		var spec flex.JobSpec
-		if err := proto.Unmarshal(req, &spec); err != nil {
-			return nil, err
-		}
-		var result flex.TaskResult
-		if err := proto.Unmarshal(res, &result); err != nil {
-			return nil, err
-		}
-		state, err := parseJobState(stateStr)
-		if err != nil {
-			return nil, err
-		}
-
-		var taskID string
-		if taskIDPtr != nil {
-			taskID = *taskIDPtr
-		}
-
-		var flexletName string
-		if flexletNamePtr != nil {
-			flexletName = *flexletNamePtr
-		}
-
-		jobs = append(jobs, &flex.JobStatus{
-			Job: &flex.Job{
-				Id:   id,
-				Spec: &spec,
-			},
-			State:       state,
-			TaskId:      taskID,
-			FlexletName: flexletName,
-			Result:      &result,
-		})
-	}
-	return jobs, nil
+	return scanJobStatuses(rows)
 }
 
 func (m *MetaStore) TakeTask(ctx context.Context, flexletName string) (ref *flexletpb.TaskRef, jobSpec *flex.JobSpec, err error) {
@@ -563,6 +531,55 @@ FROM flexlets
 			IdleCores:       totalCores - runningJobs,
 		},
 	}, nil
+}
+
+func scanJobStatuses(rows *sql.Rows) ([]*flex.JobStatus, error) {
+	var jobs []*flex.JobStatus
+	for rows.Next() {
+		var id int64
+		var stateStr string
+		var taskIDPtr *string
+		var flexletNamePtr *string
+		var req, res []byte
+		if err := rows.Scan(&id, &stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
+			return nil, err
+		}
+
+		var spec flex.JobSpec
+		if err := proto.Unmarshal(req, &spec); err != nil {
+			return nil, err
+		}
+		var result flex.TaskResult
+		if err := proto.Unmarshal(res, &result); err != nil {
+			return nil, err
+		}
+		state, err := parseJobState(stateStr)
+		if err != nil {
+			return nil, err
+		}
+
+		var taskID string
+		if taskIDPtr != nil {
+			taskID = *taskIDPtr
+		}
+
+		var flexletName string
+		if flexletNamePtr != nil {
+			flexletName = *flexletNamePtr
+		}
+
+		jobs = append(jobs, &flex.JobStatus{
+			Job: &flex.Job{
+				Id:   id,
+				Spec: &spec,
+			},
+			State:       state,
+			TaskId:      taskID,
+			FlexletName: flexletName,
+			Result:      &result,
+		})
+	}
+	return jobs, nil
 }
 
 func parseJobState(state string) (flex.JobState, error) {

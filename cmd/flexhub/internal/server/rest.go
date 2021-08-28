@@ -23,7 +23,7 @@ import (
 
 type restServer struct {
 	grpcServer *grpc.Server
-	mux *http.ServeMux
+	mux        *http.ServeMux
 }
 
 func newRESTServer(grpcServer *grpc.Server) *restServer {

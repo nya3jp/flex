@@ -31,3 +31,10 @@ CREATE TABLE `flexlets` (
     `cores` INT(10) NOT NULL,
     `data` MEDIUMBLOB NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+
+CREATE TABLE `labels` (
+    `label` CHAR(128) NOT NULL,
+    `job_id` BIGINT(20) NOT NULL,
+    PRIMARY KEY (`label`, `job_id` DESC),
+    FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;

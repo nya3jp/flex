@@ -119,11 +119,11 @@ func (s *flexServer) GetJobOutput(ctx context.Context, req *flex.GetJobOutputReq
 }
 
 func (s *flexServer) ListJobs(ctx context.Context, req *flex.ListJobsRequest) (*flex.ListJobsResponse, error) {
-	tasks, err := s.meta.ListJobs(ctx, req.GetLimit(), req.GetBeforeId(), req.GetState())
+	jobs, err := s.meta.ListJobs(ctx, req.GetState(), req.GetLabel(), req.GetLimit(), req.GetBeforeId())
 	if err != nil {
 		return nil, err
 	}
-	return &flex.ListJobsResponse{Jobs: tasks}, nil
+	return &flex.ListJobsResponse{Jobs: jobs}, nil
 }
 
 func (s *flexServer) InsertPackage(stream flex.FlexService_InsertPackageServer) error {

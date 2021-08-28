@@ -52,6 +52,18 @@ Job {{ .Job.GetJob.GetId }}
       {{ end }}
     </td>
   </tr>
+  <tr>
+    <th scope="row">Labels</th>
+    <td>
+      {{ if gt (.Job.GetJob.GetSpec.GetAnnotations.GetLabels | len) 0 }}
+      {{ range .Job.GetJob.GetSpec.GetAnnotations.GetLabels }}
+      <code>{{ . }}</code>
+      {{ end }}
+      {{ else }}
+      (No label)
+      {{ end }}
+    </td>
+  </tr>
   {{ if eq .Job.GetState.String "FINISHED" }}
   <tr>
     <th scope="row">Result</th>

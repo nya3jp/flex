@@ -30,6 +30,7 @@ message JobSpec {
   JobInputs inputs = 2;
   JobLimits limits = 3;
   JobConstraints constraints = 4;
+  JobAnnotations annotations = 5;
 }
 
 message JobInputs {
@@ -44,6 +45,10 @@ message JobPackage {
 
 message JobConstraints {
   int32 priority = 1;
+}
+
+message JobAnnotations {
+  repeated string labels = 1;
 }
 
 message JobStatus {
