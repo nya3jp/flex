@@ -438,6 +438,8 @@ func (m *MetaStore) ListFlexlets(ctx context.Context) (statuses []*flex.FlexletS
 	}
 	defer rows.Close()
 
+	statusMap := make(map[string]*flex.FlexletStatus)
+	var names []string
 	for rows.Next() {
 		var name, stateStr string
 		var data []byte
@@ -455,13 +457,54 @@ func (m *MetaStore) ListFlexlets(ctx context.Context) (statuses []*flex.FlexletS
 			return nil, err
 		}
 
-		statuses = append(statuses, &flex.FlexletStatus{
+		statusMap[name] = &flex.FlexletStatus{
 			Flexlet: &flex.Flexlet{
 				Name: name,
 				Spec: &spec,
 			},
 			State: state,
+		}
+		names = append(names, name)
+	}
+
+	rows, err = m.db.QueryContext(ctx, `
+SELECT j.id, t.flexlet, j.request
+FROM jobs j
+    INNER JOIN tasks t ON (j.task_uuid = t.uuid)
+WHERE j.state = 'RUNNING'
+`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var jobID int64
+		var flexletName string
+		var req []byte
+		if err := rows.Scan(&jobID, &flexletName, &req); err != nil {
+			return nil, err
+		}
+
+		status := statusMap[flexletName]
+		if status == nil {
+			continue
+		}
+
+		var spec flex.JobSpec
+		if err := proto.Unmarshal(req, &spec); err != nil {
+			return nil, err
+		}
+
+		status.CurrentJobs = append(status.CurrentJobs, &flex.Job{
+			Id:   jobID,
+			Spec: &spec,
 		})
+	}
+
+	statuses = make([]*flex.FlexletStatus, 0, len(statusMap))
+	for _, name := range names {
+		statuses = append(statuses, statusMap[name])
 	}
 	return statuses, nil
 }

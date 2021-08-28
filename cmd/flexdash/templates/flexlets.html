@@ -39,8 +39,21 @@ Flexlets
       {{ end }}
     </td>
     <td class="text-ellipsis">{{ .GetFlexlet.GetName }}</td>
-    <td>{{ .GetFlexlet.GetSpec.GetCores }}</td>
-    <td></td>
+    <td>
+      {{ .GetCurrentJobs | len }} / {{ .GetFlexlet.GetSpec.GetCores }}
+    </td>
+    <td>
+      <ul class="list-unstyled mb-0">
+        {{ range .GetCurrentJobs }}
+        <li>
+          <a href="/jobs/{{ .GetId }}/" class="text-reset">
+            [{{ .GetId }}]
+            <code class="command">{{ .GetSpec.GetCommand.GetArgs | shellquote }}</code>
+          </a>
+        </li>
+        {{ end }}
+      </ul>
+    </td>
   </tr>
   {{ end }}
   </tbody>

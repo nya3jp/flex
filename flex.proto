@@ -82,6 +82,7 @@ message Tag {
 message FlexletStatus {
   Flexlet flexlet = 1;
   FlexletState state = 2;
+  repeated Job current_jobs = 3;
 }
 
 message Flexlet {
