@@ -18,25 +18,26 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc"
 )
 
 type restServer struct {
 	grpcServer *grpc.Server
-	mux        *http.ServeMux
+	router     *httprouter.Router
 }
 
 func newRESTServer(grpcServer *grpc.Server) *restServer {
-	s := &restServer{grpcServer: grpcServer, mux: http.NewServeMux()}
-	s.mux.HandleFunc("/", s.handleOK)
-	s.mux.HandleFunc("/healthz", s.handleOK)
+	s := &restServer{grpcServer: grpcServer, router: httprouter.New()}
+	s.router.GET("/", s.handleOK)
+	s.router.GET("/healthz", s.handleOK)
 	return s
 }
 
 func (s *restServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	s.router.ServeHTTP(w, r)
 }
 
-func (s *restServer) handleOK(w http.ResponseWriter, r *http.Request) {
+func (s *restServer) handleOK(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	io.WriteString(w, "ok")
 }

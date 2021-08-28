@@ -23,5 +23,4 @@ require (
 	google.golang.org/api v0.50.0
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
