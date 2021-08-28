@@ -33,7 +33,7 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 		tokens <- struct{}{}
 	}
 
-	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int64(cores)}})
+	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
 	defer stop()
 
 	log.Printf("INFO: Flexlet start")

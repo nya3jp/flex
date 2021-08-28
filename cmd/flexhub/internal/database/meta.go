@@ -502,7 +502,7 @@ SELECT
     IFNULL(SUM(IF(state = 'RUNNING', 1, 0)), 0)
 FROM jobs
 `)
-	var pendingJobs, runningJobs int64
+	var pendingJobs, runningJobs int32
 	if err := row.Scan(&pendingJobs, &runningJobs); err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ SELECT
     IFNULL(SUM(IF(state = 'ONLINE', cores, 0)), 0)
 FROM flexlets
 `)
-	var onlineFlexlets, offlineFlexlets, totalCores int64
+	var onlineFlexlets, offlineFlexlets, totalCores int32
 	if err := row.Scan(&onlineFlexlets, &offlineFlexlets, &totalCores); err != nil {
 		return nil, err
 	}

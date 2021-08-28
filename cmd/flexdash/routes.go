@@ -58,7 +58,7 @@ type baseValues struct {
 type indexValues struct {
 	Base       baseValues
 	Stats      *flex.Stats
-	TotalCores int64
+	TotalCores int32
 	HubURL     string
 }
 

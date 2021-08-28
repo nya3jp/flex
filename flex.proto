@@ -90,7 +90,7 @@ message Flexlet {
 }
 
 message FlexletSpec {
-  int64 cores = 1;
+  int32 cores = 1;
 }
 
 enum FlexletState {
@@ -123,13 +123,13 @@ message Stats {
 }
 
 message JobStats {
-  int64 pending_jobs = 1;
-  int64 running_jobs = 2;
+  int32 pending_jobs = 1;
+  int32 running_jobs = 2;
 }
 
 message FlexletStats {
-  int64 online_flexlets = 1;
-  int64 offline_flexlets = 2;
-  int64 busy_cores = 3;
-  int64 idle_cores = 4;
+  int32 online_flexlets = 1;
+  int32 offline_flexlets = 2;
+  int32 busy_cores = 3;
+  int32 idle_cores = 4;
 }
