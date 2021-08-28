@@ -33,9 +33,7 @@ func DialContext(ctx context.Context, serverURL string, password string) (*grpc.
 	if err != nil {
 		return nil, fmt.Errorf("invalid gRPC server URL: %w", err)
 	}
-	if password != "" {
-		opts = append(opts, grpc.WithPerRPCCredentials(&passwordCredentials{password}))
-	}
+	opts = append(opts, grpc.WithPerRPCCredentials(NewAuthCredsFromPassword(password)))
 	return grpc.DialContext(ctx, host, opts...)
 }
 
@@ -70,16 +68,4 @@ func hostWithDefaultPort(host string, defaultPort int) string {
 		return fmt.Sprintf("%s:%d", host, defaultPort)
 	}
 	return host
-}
-
-type passwordCredentials struct {
-	password string
-}
-
-func (c *passwordCredentials) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
-	return map[string]string{"authorization": "Bearer " + c.password}, nil
-}
-
-func (c *passwordCredentials) RequireTransportSecurity() bool {
-	return false
 }

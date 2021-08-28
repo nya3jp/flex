@@ -47,6 +47,18 @@ func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwor
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		return err
+	}
+	defer lis.Close()
+
+	cc, err := grpc.DialContext(ctx, fmt.Sprintf("localhost:%d", port), grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+	defer cc.Close()
+
 	grpcServer := grpc.NewServer(
 		grpc.StreamInterceptor(grpc_auth.StreamServerInterceptor(makeAuthFunc(password))),
 		grpc.UnaryInterceptor(grpc_auth.UnaryServerInterceptor(makeAuthFunc(password))),
@@ -54,20 +66,19 @@ func Run(ctx context.Context, port int, meta *database.MetaStore, fs FS, passwor
 	flex.RegisterFlexServiceServer(grpcServer, newFlexServer(meta, fs))
 	flexletpb.RegisterFlexletServiceServer(grpcServer, newFlexletServer(meta, fs))
 
-	restServer := newRESTServer(grpcServer)
+	restServer := newRESTServer(flex.NewFlexServiceClient(cc))
 
 	httpServer := &http.Server{
-		Addr:        fmt.Sprintf("0.0.0.0:%d", port),
 		Handler:     newDualHandler(grpcServer, restServer),
 		BaseContext: func(net.Listener) context.Context { return ctx },
 	}
 
-	log.Printf("INFO: Listening at %s", httpServer.Addr)
+	log.Printf("INFO: Listening at %s", lis.Addr().String())
 
 	go func() {
 		<-ctx.Done()
 		log.Print("INFO: Shutting down the server")
 		httpServer.Close()
 	}()
-	return httpServer.ListenAndServe()
+	return httpServer.Serve(lis)
 }
