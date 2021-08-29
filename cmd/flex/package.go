@@ -45,6 +45,7 @@ var cmdPackage = &cli.Command{
 
 var cmdPackageCreate = &cli.Command{
 	Name:      "create",
+	Aliases:   []string{"new"},
 	Usage:     "Creates a new package.",
 	ArgsUsage: "[files...]",
 	Flags: []cli.Flag{
@@ -92,6 +93,7 @@ var cmdPackageTag = &cli.Command{
 
 var cmdPackageInfo = &cli.Command{
 	Name:      "info",
+	Aliases:   []string{"get"},
 	Usage:     "Shows package info.",
 	ArgsUsage: "{hash|tag}",
 	Action: func(c *cli.Context) error {
@@ -119,6 +121,7 @@ var cmdPackageInfo = &cli.Command{
 
 var cmdPackageList = &cli.Command{
 	Name:      "list",
+	Aliases:   []string{"ls"},
 	Usage:     "Lists tagged packages.",
 	ArgsUsage: "",
 	Action: func(c *cli.Context) error {

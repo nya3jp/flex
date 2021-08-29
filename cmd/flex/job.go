@@ -147,6 +147,7 @@ var cmdRun = &cli.Command{
 
 var cmdJobCreate = &cli.Command{
 	Name:      "create",
+	Aliases:   []string{"new"},
 	Usage:     "Creates a new job.",
 	UsageText: "flex job create [command options] executable [args...]\n   flex job create [command options] -s command",
 	Flags:     jobCreateFlags,
@@ -192,6 +193,7 @@ var cmdJobWait = &cli.Command{
 
 var cmdJobOutputs = &cli.Command{
 	Name:      "outputs",
+	Aliases:   []string{"cat"},
 	Usage:     "Prints out job outputs",
 	ArgsUsage: "job-id",
 	Action: func(c *cli.Context) error {
@@ -215,6 +217,7 @@ var cmdJobOutputs = &cli.Command{
 
 var cmdJobInfo = &cli.Command{
 	Name:      "info",
+	Aliases:   []string{"get"},
 	Usage:     "Shows job info.",
 	ArgsUsage: "job-id",
 	Action: func(c *cli.Context) error {
@@ -241,6 +244,7 @@ var cmdJobInfo = &cli.Command{
 
 var cmdJobList = &cli.Command{
 	Name:      "list",
+	Aliases:   []string{"ls"},
 	Usage:     "Lists jobs.",
 	ArgsUsage: "",
 	Flags: []cli.Flag{

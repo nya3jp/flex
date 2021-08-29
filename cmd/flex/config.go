@@ -85,8 +85,9 @@ func saveConfig(cfg Config) error {
 }
 
 var cmdConfigure = &cli.Command{
-	Name:  "configure",
-	Usage: "Set up configuration.",
+	Name:    "configure",
+	Aliases: []string{"config"},
+	Usage:   "Set up configuration.",
 	Action: func(c *cli.Context) error {
 		cfg := config
 
