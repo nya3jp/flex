@@ -1,11 +1,23 @@
 import {useFlexClient} from './client';
-import {JobStatus} from 'flex-client';
+import {JobStatus, ListJobsParams} from 'flex-client';
 import {useEffect, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
 import shellEscape from 'shell-escape';
 import {stateLabel} from './commonui';
 import './JobsPage.css';
 import './text.css';
+
+interface QueryParams {
+  limit: number
+  before: string | null
+}
+
+function useQueryParams(): QueryParams {
+  const query = new URLSearchParams(useLocation().search);
+  const limit = parseInt(query.get('limit') ?? '100');
+  const before = query.get('before');
+  return {limit, before};
+}
 
 function TableRow({job}: { job: JobStatus }): React.ReactElement {
   return (
@@ -28,6 +40,7 @@ function TableRow({job}: { job: JobStatus }): React.ReactElement {
 }
 
 function Table({jobs}: { jobs: JobStatus[] }): React.ReactElement {
+  const {limit} = useQueryParams();
   return (
       <div>
         <table className="table table-sm table-striped jobs"
@@ -52,7 +65,7 @@ function Table({jobs}: { jobs: JobStatus[] }): React.ReactElement {
           {
             jobs.length > 0 ?
                 <Link
-                    to={`/jobs/?before=${jobs[jobs.length - 1].job.id}`}>Older &raquo;</Link> :
+                    to={`/jobs/?limit=${limit}&before=${jobs[jobs.length - 1].job.id}`}>Older &raquo;</Link> :
                 null
           }
         </p>
@@ -62,13 +75,18 @@ function Table({jobs}: { jobs: JobStatus[] }): React.ReactElement {
 
 export default function JobsPage() {
   const client = useFlexClient();
+  const {limit, before} = useQueryParams();
   const [jobs, setJobs] = useState<JobStatus[] | undefined>(undefined);
   useEffect(() => {
     (async () => {
-      const jobs = await client.listJobs();
+      const params: ListJobsParams = {limit};
+      if (before) {
+        params.before = before;
+      }
+      const jobs = await client.listJobs(params);
       setJobs(jobs);
     })();
-  }, [client, setJobs]);
+  }, [client, setJobs, limit, before]);
 
   if (jobs === undefined) {
     return <div>Loading...</div>;
