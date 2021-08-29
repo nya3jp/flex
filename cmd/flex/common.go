@@ -35,14 +35,16 @@ const exitCodeHelp = 2
 var flagHub = &cli.StringFlag{
 	Name:    "hub",
 	Aliases: []string{"h"},
-	Value:   "http://localhost:7111",
+	Value:   config.HubURL,
 	Usage:   "Specifies a flexhub URL.",
 }
 
 var flagPassword = &cli.StringFlag{
-	Name:    "password",
-	Aliases: []string{"P"},
-	Usage:   "Sets a Flexlet service password.",
+	Name:        "password",
+	Aliases:     []string{"P"},
+	Value:       config.Password,
+	Usage:       "Sets a Flexlet service password.",
+	DefaultText: "<hidden>",
 }
 
 func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClient) error) error {
