@@ -19,8 +19,10 @@ import (
 	"net/http"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/cmd/flexhub/internal/restfix"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,14 +44,15 @@ func newRESTServer(cl flex.FlexServiceClient) *restServer {
 	engine := gin.New()
 	s := &restServer{cl: cl, engine: engine}
 	engine.Use(cors.Default()) // allow all CORS requests
-	engine.GET("/", s.handleOK)
-	engine.GET("/healthz", s.handleOK)
-	engine.GET("/api/jobs", s.handleAPIJobs)
-	engine.GET("/api/jobs/:id", s.handleAPIJob)
-	engine.GET("/api/jobs/:id/stdout", s.handleAPIJobStdout)
-	engine.GET("/api/jobs/:id/stderr", s.handleAPIJobStderr)
-	engine.GET("/api/flexlets", s.handleAPIFlexlets)
-	engine.GET("/api/stats", s.handleAPIStats)
+	engine.GET("/healthz", s.handleHealthz)
+	engine.Use(static.Serve("/", static.LocalFile("./web", true)))
+	api := engine.Group("/api")
+	api.GET("/jobs", s.handleAPIJobs)
+	api.GET("/jobs/:id", s.handleAPIJob)
+	api.GET("/jobs/:id/stdout", s.handleAPIJobStdout)
+	api.GET("/jobs/:id/stderr", s.handleAPIJobStderr)
+	api.GET("/flexlets", s.handleAPIFlexlets)
+	api.GET("/stats", s.handleAPIStats)
 	return s
 }
 
@@ -57,7 +60,7 @@ func (s *restServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.engine.ServeHTTP(w, r)
 }
 
-func (s *restServer) handleOK(ctx *gin.Context) {
+func (s *restServer) handleHealthz(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "ok")
 }
 
@@ -90,6 +93,11 @@ func (s *restServer) handleAPIJobs(ctx *gin.Context) {
 			return err
 		}
 
+		for _, job := range res.GetJobs() {
+			if err := restfix.JobStatus(job); err != nil {
+				return err
+			}
+		}
 		return writeProtoJSON(ctx, res)
 	})
 }
@@ -113,6 +121,9 @@ func (s *restServer) handleAPIJob(ctx *gin.Context) {
 			return err
 		}
 
+		if err := restfix.JobStatus(res.GetJob()); err != nil {
+			return err
+		}
 		return writeProtoJSON(ctx, res)
 	})
 }
@@ -144,7 +155,6 @@ func (s *restServer) handleAPIJobOutput(ctx *gin.Context, outputType flex.GetJob
 		if err != nil {
 			return err
 		}
-
 		ctx.Redirect(http.StatusFound, res.GetLocation().GetPresignedUrl())
 		return nil
 	})
@@ -156,7 +166,11 @@ func (s *restServer) handleAPIFlexlets(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-
+		for _, flexlet := range res.GetFlexlets() {
+			if err := restfix.FlexletStatus(flexlet); err != nil {
+				return err
+			}
+		}
 		return writeProtoJSON(ctx, res)
 	})
 }
@@ -167,7 +181,6 @@ func (s *restServer) handleAPIStats(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-
 		return writeProtoJSON(ctx, res)
 	})
 }

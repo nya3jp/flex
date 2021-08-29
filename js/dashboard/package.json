@@ -8,7 +8,7 @@
     "@types/react-router-dom": "^5.1.8",
     "@types/shell-escape": "^0.2.0",
     "bootstrap": "^5.0.2",
-    "flex-client": "file:..",
+    "flex-client": "file:../client",
     "react": "^17.0.2",
     "react-bootstrap": "^2.0.0-beta.4",
     "react-dom": "^17.0.2",
@@ -40,5 +40,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "proxy": "http://localhost:7111"
 }
