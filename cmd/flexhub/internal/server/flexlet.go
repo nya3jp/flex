@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
@@ -39,7 +40,10 @@ func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 }
 
 func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
-	ref, jobSpec, err := s.queue.WaitTask(ctx, req.GetFlexletName())
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	ref, jobSpec, err := s.queue.WaitTask(waitCtx, req.GetFlexletName())
 	if err != nil {
 		return nil, err
 	}
