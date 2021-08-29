@@ -23,6 +23,7 @@ type FlexServiceClient interface {
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...grpc.CallOption) (*GetJobResponse, error)
 	GetJobOutput(ctx context.Context, in *GetJobOutputRequest, opts ...grpc.CallOption) (*GetJobOutputResponse, error)
 	ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error)
+	UpdateJobLabels(ctx context.Context, in *UpdateJobLabelsRequest, opts ...grpc.CallOption) (*UpdateJobLabelsResponse, error)
 	InsertPackage(ctx context.Context, opts ...grpc.CallOption) (FlexService_InsertPackageClient, error)
 	GetPackage(ctx context.Context, in *GetPackageRequest, opts ...grpc.CallOption) (*GetPackageResponse, error)
 	UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...grpc.CallOption) (*UpdateTagResponse, error)
@@ -78,6 +79,15 @@ func (c *flexServiceClient) GetJobOutput(ctx context.Context, in *GetJobOutputRe
 func (c *flexServiceClient) ListJobs(ctx context.Context, in *ListJobsRequest, opts ...grpc.CallOption) (*ListJobsResponse, error) {
 	out := new(ListJobsResponse)
 	err := c.cc.Invoke(ctx, "/flex.FlexService/ListJobs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flexServiceClient) UpdateJobLabels(ctx context.Context, in *UpdateJobLabelsRequest, opts ...grpc.CallOption) (*UpdateJobLabelsResponse, error) {
+	out := new(UpdateJobLabelsResponse)
+	err := c.cc.Invoke(ctx, "/flex.FlexService/UpdateJobLabels", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +182,7 @@ type FlexServiceServer interface {
 	GetJob(context.Context, *GetJobRequest) (*GetJobResponse, error)
 	GetJobOutput(context.Context, *GetJobOutputRequest) (*GetJobOutputResponse, error)
 	ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error)
+	UpdateJobLabels(context.Context, *UpdateJobLabelsRequest) (*UpdateJobLabelsResponse, error)
 	InsertPackage(FlexService_InsertPackageServer) error
 	GetPackage(context.Context, *GetPackageRequest) (*GetPackageResponse, error)
 	UpdateTag(context.Context, *UpdateTagRequest) (*UpdateTagResponse, error)
@@ -199,6 +210,9 @@ func (UnimplementedFlexServiceServer) GetJobOutput(context.Context, *GetJobOutpu
 }
 func (UnimplementedFlexServiceServer) ListJobs(context.Context, *ListJobsRequest) (*ListJobsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListJobs not implemented")
+}
+func (UnimplementedFlexServiceServer) UpdateJobLabels(context.Context, *UpdateJobLabelsRequest) (*UpdateJobLabelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateJobLabels not implemented")
 }
 func (UnimplementedFlexServiceServer) InsertPackage(FlexService_InsertPackageServer) error {
 	return status.Errorf(codes.Unimplemented, "method InsertPackage not implemented")
@@ -317,6 +331,24 @@ func _FlexService_ListJobs_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FlexServiceServer).ListJobs(ctx, req.(*ListJobsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FlexService_UpdateJobLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateJobLabelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlexServiceServer).UpdateJobLabels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/flex.FlexService/UpdateJobLabels",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlexServiceServer).UpdateJobLabels(ctx, req.(*UpdateJobLabelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -463,6 +495,10 @@ var FlexService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListJobs",
 			Handler:    _FlexService_ListJobs_Handler,
+		},
+		{
+			MethodName: "UpdateJobLabels",
+			Handler:    _FlexService_UpdateJobLabels_Handler,
 		},
 		{
 			MethodName: "GetPackage",

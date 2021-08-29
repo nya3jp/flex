@@ -126,6 +126,13 @@ func (s *flexServer) ListJobs(ctx context.Context, req *flex.ListJobsRequest) (*
 	return &flex.ListJobsResponse{Jobs: jobs}, nil
 }
 
+func (s *flexServer) UpdateJobLabels(ctx context.Context, req *flex.UpdateJobLabelsRequest) (*flex.UpdateJobLabelsResponse, error) {
+	if err := s.meta.UpdateJobLabels(ctx, req.GetId(), req.GetAdds(), req.GetDels()); err != nil {
+		return nil, err
+	}
+	return &flex.UpdateJobLabelsResponse{}, nil
+}
+
 func (s *flexServer) InsertPackage(stream flex.FlexService_InsertPackageServer) error {
 	ctx := stream.Context()
 

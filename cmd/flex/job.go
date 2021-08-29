@@ -97,6 +97,18 @@ var flagLabel = &cli.StringFlag{
 	Usage:   "Filters jobs by label.",
 }
 
+var flagAdd = &cli.StringSliceFlag{
+	Name:    "add",
+	Aliases: []string{"a"},
+	Usage:   "Adds a label.",
+}
+
+var flagDelete = &cli.StringSliceFlag{
+	Name:    "delete",
+	Aliases: []string{"del", "d"},
+	Usage:   "Deletes a label.",
+}
+
 var jobCreateFlags = []cli.Flag{
 	flagFile,
 	flagPackage,
@@ -116,6 +128,7 @@ var cmdJob = &cli.Command{
 		cmdJobOutputs,
 		cmdJobInfo,
 		cmdJobList,
+		cmdJobLabel,
 	},
 }
 
@@ -293,6 +306,39 @@ var cmdJobList = &cli.Command{
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			return enc.Encode(jobs)
+		})
+	},
+}
+
+var cmdJobLabel = &cli.Command{
+	Name:      "label",
+	Usage:     "Updates job labels.",
+	ArgsUsage: "job-id",
+	Flags: []cli.Flag{
+		flagAdd,
+		flagDelete,
+	},
+	Action: func(c *cli.Context) error {
+		adds := c.StringSlice(flagAdd.Name)
+		dels := c.StringSlice(flagDelete.Name)
+		if c.NArg() != 1 {
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
+		}
+		id, err := strconv.ParseInt(c.Args().Get(0), 10, 64)
+		if err != nil {
+			return err
+		}
+
+		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
+			req := &flex.UpdateJobLabelsRequest{
+				Id:   id,
+				Adds: adds,
+				Dels: dels,
+			}
+			if _, err := cl.UpdateJobLabels(ctx, req); err != nil {
+				return err
+			}
+			return nil
 		})
 	},
 }

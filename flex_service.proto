@@ -26,6 +26,7 @@ service FlexService {
   rpc GetJob(GetJobRequest) returns (GetJobResponse) {}
   rpc GetJobOutput(GetJobOutputRequest) returns (GetJobOutputResponse) {}
   rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {}
+  rpc UpdateJobLabels(UpdateJobLabelsRequest) returns (UpdateJobLabelsResponse) {}
 
   rpc InsertPackage(stream InsertPackageRequest) returns (InsertPackageResponse) {}
   rpc GetPackage(GetPackageRequest) returns (GetPackageResponse) {}
@@ -83,6 +84,15 @@ message ListJobsRequest {
 
 message ListJobsResponse {
   repeated JobStatus jobs = 1;
+}
+
+message UpdateJobLabelsRequest {
+  int64 id = 1;
+  repeated string adds = 2;
+  repeated string dels = 3;
+}
+
+message UpdateJobLabelsResponse {
 }
 
 message InsertPackageRequest {

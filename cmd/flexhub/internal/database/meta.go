@@ -216,6 +216,96 @@ LIMIT ?
 	return scanJobStatuses(rows)
 }
 
+func (m *MetaStore) UpdateJobLabels(ctx context.Context, id int64, adds, dels []string) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("updating job labels: %w", err)
+		}
+	}()
+
+	tx, err := m.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Read the current job spec.
+	row := tx.QueryRowContext(ctx, `SELECT request FROM jobs WHERE id = ? FOR UPDATE`, id)
+	var req []byte
+	if err := row.Scan(&req); err != nil {
+		return err
+	}
+
+	var spec flex.JobSpec
+	if err := proto.Unmarshal(req, &spec); err != nil {
+		return err
+	}
+
+	if spec.Annotations == nil {
+		spec.Annotations = &flex.JobAnnotations{}
+	}
+	olds := spec.Annotations.Labels
+
+	makeSet := func(ss []string) map[string]struct{} {
+		m := make(map[string]struct{})
+		for _, s := range ss {
+			m[s] = struct{}{}
+		}
+		return m
+	}
+	addSet := makeSet(adds)
+	delSet := makeSet(dels)
+	oldSet := makeSet(olds)
+
+	// Update addSet/delSet for consistency.
+	for _, old := range olds {
+		delete(addSet, old)
+	}
+	for _, del := range dels {
+		if _, ok := oldSet[del]; !ok {
+			delete(delSet, del)
+		}
+	}
+
+	// Compute the new labels.
+	var news []string
+	for _, old := range olds {
+		if _, ok := delSet[old]; !ok {
+			news = append(news, old)
+		}
+	}
+	for _, add := range adds {
+		if _, ok := addSet[add]; ok {
+			news = append(news, add)
+		}
+	}
+	spec.Annotations.Labels = news
+
+	// Save the new spec.
+	req, err = proto.Marshal(&spec)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `UPDATE jobs SET request = ? WHERE id = ?`, req, id); err != nil {
+		return err
+	}
+
+	// Update label indices.
+	for add := range addSet {
+		if _, err := tx.ExecContext(ctx, `INSERT IGNORE INTO labels (job_id, label) VALUES (?, ?)`, id, add); err != nil {
+			return err
+		}
+	}
+	for del := range delSet {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM labels WHERE job_id = ? AND label = ?`, id, del); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (m *MetaStore) TakeTask(ctx context.Context, flexletName string) (ref *flexletpb.TaskRef, jobSpec *flex.JobSpec, err error) {
 	defer func() {
 		if err != nil {
