@@ -4,6 +4,8 @@ import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import shellEscape from 'shell-escape';
 import {stateLabel} from './commonui';
+import './JobsPage.css';
+import './text.css';
 
 function TableRow({job}: { job: JobStatus }): React.ReactElement {
   return (

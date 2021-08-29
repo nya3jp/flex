@@ -4,6 +4,8 @@ import {Fragment, useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import shellEscape from 'shell-escape';
 import {stateLabel} from './commonui';
+import './JobPage.css';
+import './text.css';
 
 interface JobPageParams {
   id: string

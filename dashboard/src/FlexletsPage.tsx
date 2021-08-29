@@ -3,6 +3,8 @@ import {FlexletStatus, Job} from 'flex-client';
 import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import shellEscape from 'shell-escape';
+import './FlexletsPage.css';
+import './text.css';
 
 function JobItem({job}: { job: Job }): React.ReactElement {
   return (
