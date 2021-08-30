@@ -52,6 +52,10 @@ func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClien
 	hubURL := c.String(flagHub.Name)
 	password := c.String(flagPassword.Name)
 
+	if hubURL == "" {
+		return errors.New("flexhub URL is not set; run \"flex configure\"")
+	}
+
 	cc, err := grpcutil.DialContext(ctx, hubURL, password)
 	if err != nil {
 		return err

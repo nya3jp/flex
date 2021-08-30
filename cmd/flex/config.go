@@ -48,7 +48,7 @@ var config = func() Config {
 
 func defaultConfig() Config {
 	return Config{
-		HubURL:   "http://localhost:7111",
+		HubURL:   "",
 		Password: "",
 	}
 }
