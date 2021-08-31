@@ -1,6 +1,6 @@
 # Flex
 
-Flex is a workload distribution system tailored for programming contests.
+Flex is a simple workload distribution system.
 
 ## Usage
 
