@@ -71,6 +71,23 @@ func setUp(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Compile Go binaries.
+	t.Log("Compiling Flex binaries...")
+	goCmd := exec.Command(
+		"go",
+		"install",
+		"./cmd/flex",
+		"./cmd/flexhub",
+		"./cmd/flexlet",
+		"./cmd/testfs",
+	)
+	goCmd.Env = append(os.Environ(), "GOBIN=" + binDir)
+	goCmd.Stdout = os.Stdout
+	goCmd.Stderr = os.Stderr
+	if err := goCmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
 	// Set up environment variables.
 	oldHome := os.Getenv("HOME")
 	os.Setenv("HOME", homeDir)
@@ -99,23 +116,6 @@ func setUp(t *testing.T) {
 		if _, err := db.Exec("DROP TABLE IF EXISTS " + table); err != nil {
 			t.Fatalf("Failed to drop table %s: %v", table, err)
 		}
-	}
-
-	// Compile Go binaries.
-	t.Log("Compiling Flex binaries...")
-	goCmd := exec.Command(
-		"go",
-		"install",
-		"./cmd/flex",
-		"./cmd/flexhub",
-		"./cmd/flexlet",
-		"./cmd/testfs",
-	)
-	goCmd.Env = append(os.Environ(), "GOBIN=" + binDir)
-	goCmd.Stdout = os.Stdout
-	goCmd.Stderr = os.Stderr
-	if err := goCmd.Run(); err != nil {
-		t.Fatal(err)
 	}
 
 	// Configure Flex CLI.
