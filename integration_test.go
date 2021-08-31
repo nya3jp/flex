@@ -17,13 +17,16 @@
 package flex_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -39,6 +42,26 @@ func runCommand(name string, args ...string) (string, error) {
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	return string(out), err
+}
+
+func waitHTTP(t *testing.T, port int) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	for ctx.Err() == nil {
+		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://localhost:%d", port), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res, err := http.DefaultClient.Do(req); err == nil {
+			res.Body.Close()
+			return
+		}
+	}
 }
 
 func setUp(t *testing.T) {
@@ -117,6 +140,7 @@ password = foobar
 		fsCmd.Process.Kill()
 		fsCmd.Process.Wait()
 	})
+	waitHTTP(t, 57180)
 
 	// Start Flexhub.
 	t.Log("Starting Flexhub...")
@@ -128,6 +152,7 @@ password = foobar
 		hubCmd.Process.Kill()
 		hubCmd.Process.Wait()
 	})
+	waitHTTP(t, 57111)
 
 	t.Log("Finished setup")
 }
