@@ -36,6 +36,7 @@ gcloud sql databases create flex --instance="${DB_INSTANCE_NAME}"
 # Create a Storage bucket
 gsutil mb -b on -l "${REGION}" "gs://${BUCKET_NAME}"
 gsutil iam ch "serviceAccount:flexhub@${PROJECT}.iam.gserviceaccount.com:roles/storage.objectAdmin" "gs://${BUCKET_NAME}"
+gsutil cors set configs/cors.json "gs://${BUCKET_NAME}"
 
 # Deploy Flexhub to Cloud Run
 gcloud beta run deploy \
