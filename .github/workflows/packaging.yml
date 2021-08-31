@@ -7,7 +7,7 @@ on:
 jobs:
 
   build_and_test:
-    name: "Build and Test"
+    name: "Docker push"
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -34,11 +34,6 @@ jobs:
           FLEX_TEST_DB_USER: flexuser
           FLEX_TEST_DB_PASS: flexpass
           FLEX_TEST_DB_NAME: flextest
-
-  docker:
-    name: "Docker push"
-    runs-on: ubuntu-latest
-    steps:
       - uses: docker/login-action@v1
         with:
           registry: ghcr.io
