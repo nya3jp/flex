@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build integration
 // +build integration
 
 package flex_test
@@ -81,7 +82,7 @@ func setUp(t *testing.T) {
 		"./cmd/flexlet",
 		"./cmd/testfs",
 	)
-	goCmd.Env = append(os.Environ(), "GOBIN=" + binDir)
+	goCmd.Env = append(os.Environ(), "GOBIN="+binDir)
 	goCmd.Stdout = os.Stdout
 	goCmd.Stderr = os.Stderr
 	if err := goCmd.Run(); err != nil {
@@ -94,7 +95,7 @@ func setUp(t *testing.T) {
 	t.Cleanup(func() { os.Setenv("HOME", oldHome) })
 
 	oldPath := os.Getenv("PATH")
-	os.Setenv("PATH", binDir + ":" + oldPath)
+	os.Setenv("PATH", binDir+":"+oldPath)
 	t.Cleanup(func() { os.Setenv("PATH", oldPath) })
 
 	// Set up MySQL test database.
@@ -144,7 +145,7 @@ password = foobar
 
 	// Start Flexhub.
 	t.Log("Starting Flexhub...")
-	hubCmd, err := startCommand("flexhub", "--port=57111", "--db=" + dbURL, "--fs=http://localhost:57180/", "--password=foobar")
+	hubCmd, err := startCommand("flexhub", "--port=57111", "--db="+dbURL, "--fs=http://localhost:57180/", "--password=foobar")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +159,7 @@ password = foobar
 }
 
 type flexlet struct {
-	t *testing.T
+	t   *testing.T
 	cmd *exec.Cmd
 }
 
