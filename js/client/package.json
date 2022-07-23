@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {
-    "typescript": "^4.4.2"
+  "devDependencies": {
+    "typescript": "^4.7.4"
   }
 }
