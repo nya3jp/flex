@@ -17,7 +17,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -56,6 +58,7 @@ func main() {
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flexlet service password"},
+				&cli.BoolFlag{Name: "serve", Usage: "Run a HTTP server at $PORT"},
 				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
 			},
 			Action: func(c *cli.Context) error {
@@ -64,6 +67,7 @@ func main() {
 				hubURL := c.String("hub")
 				storeDir := c.String("storedir")
 				password := c.String("password")
+				serve := c.Bool("serve")
 				replicas := c.Int("replicas-for-load-testing")
 
 				runner, err := run.New(storeDir)
@@ -76,6 +80,18 @@ func main() {
 					return err
 				}
 				cl := flexletpb.NewFlexletServiceClient(cc)
+
+				if serve {
+					mux := http.NewServeMux()
+					mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
+						if err := flexlet.RunOneOff(ctx, cl, runner, name); err != nil {
+							http.Error(w, fmt.Sprintf("ERROR: %v", err), http.StatusInternalServerError)
+							return
+						}
+						io.WriteString(w, "OK")
+					})
+					return http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+				}
 
 				grp, ctx := errgroup.WithContext(ctx)
 				for i := 0; i < replicas; i++ {

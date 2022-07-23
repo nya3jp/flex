@@ -16,7 +16,11 @@ package server
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
@@ -39,11 +43,28 @@ func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 	}
 }
 
-func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
-	waitCtx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
+func (s *flexletServer) CountPendingTasks(ctx context.Context, req *flexletpb.CountPendingTasksRequest) (*flexletpb.CountPendingTasksResponse, error) {
+	count, err := s.meta.CountPendingTasks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &flexletpb.CountPendingTasksResponse{
+		Count: count,
+	}, nil
+}
 
-	ref, jobSpec, err := s.queue.WaitTask(waitCtx, req.GetFlexletName())
+func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
+	ref, jobSpec, err := func() (*flexletpb.TaskRef, *flex.JobSpec, error) {
+		if req.GetPeek() {
+			return s.meta.TakeTask(ctx, req.GetFlexletName())
+		}
+		waitCtx, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
+		return s.queue.WaitTask(waitCtx, req.GetFlexletName())
+	}()
+	if errors.Is(err, database.ErrNoPendingTask) {
+		return nil, status.Error(codes.NotFound, err.Error())
+	}
 	if err != nil {
 		return nil, err
 	}

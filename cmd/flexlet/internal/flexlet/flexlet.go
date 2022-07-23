@@ -64,6 +64,26 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 	}
 }
 
+func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string) error {
+	task, err := peekTask(ctx, cl, name)
+	if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	stop := startTaskUpdater(ctx, cl, task.GetRef())
+	defer stop()
+	log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
+	result := runner.RunTask(ctx, task.GetSpec())
+	log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
+	if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Ref: task.GetRef(), Result: result}); err != nil {
+		log.Printf("WARNING: FinishTask failed: %v", err)
+	}
+	return nil
+}
+
 func startFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, flexlet *flex.Flexlet) context.CancelFunc {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
@@ -104,6 +124,16 @@ func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletNam
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletName: flexletName})
+	if err != nil {
+		return nil, err
+	}
+	return res.GetTask(), nil
+}
+
+func peekTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletName: flexletName, Peek: true})
 	if err != nil {
 		return nil, err
 	}
