@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -33,6 +34,47 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sys/unix"
 )
+
+func runInPullMode(ctx context.Context, name string, replicas, cores int, cl flexletpb.FlexletServiceClient, runner *run.Runner) error {
+	grp, ctx := errgroup.WithContext(ctx)
+	for i := 0; i < replicas; i++ {
+		replicaName := name
+		if replicas > 1 {
+			replicaName += fmt.Sprintf(".%d", i)
+		}
+		grp.Go(func() error {
+			return flexlet.RunInPullMode(ctx, cl, runner, replicaName, cores)
+		})
+	}
+	return grp.Wait()
+}
+
+func runInPushMode(ctx context.Context, name string, cores int, cl flexletpb.FlexletServiceClient, runner *run.Runner) error {
+	tokens := make(chan struct{}, cores)
+	for i := 0; i < cores; i++ {
+		tokens <- struct{}{}
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-tokens:
+		default:
+			http.Error(w, "ERROR: max parallelism reached", http.StatusInternalServerError)
+			return
+		}
+		defer func() {
+			tokens <- struct{}{}
+		}()
+
+		if err := flexlet.RunInPushMode(ctx, cl, runner, name); err != nil {
+			http.Error(w, fmt.Sprintf("ERROR: %v", err), http.StatusInternalServerError)
+			return
+		}
+		io.WriteString(w, "OK")
+	})
+	return http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
@@ -58,7 +100,7 @@ func main() {
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flexlet service password"},
-				&cli.BoolFlag{Name: "serve", Usage: "Run a HTTP server at $PORT"},
+				&cli.BoolFlag{Name: "push", Usage: "Run in push mode"},
 				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
 			},
 			Action: func(c *cli.Context) error {
@@ -67,7 +109,7 @@ func main() {
 				hubURL := c.String("hub")
 				storeDir := c.String("storedir")
 				password := c.String("password")
-				serve := c.Bool("serve")
+				push := c.Bool("push")
 				replicas := c.Int("replicas-for-load-testing")
 
 				runner, err := run.New(storeDir)
@@ -81,29 +123,13 @@ func main() {
 				}
 				cl := flexletpb.NewFlexletServiceClient(cc)
 
-				if serve {
-					mux := http.NewServeMux()
-					mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
-						if err := flexlet.RunOneOff(ctx, cl, runner, name); err != nil {
-							http.Error(w, fmt.Sprintf("ERROR: %v", err), http.StatusInternalServerError)
-							return
-						}
-						io.WriteString(w, "OK")
-					})
-					return http.ListenAndServe(":"+os.Getenv("PORT"), mux)
-				}
-
-				grp, ctx := errgroup.WithContext(ctx)
-				for i := 0; i < replicas; i++ {
-					replicaName := name
-					if replicas > 1 {
-						replicaName += fmt.Sprintf(".%d", i)
+				if push {
+					if replicas != 1 {
+						return errors.New("replicas not supported in push mode")
 					}
-					grp.Go(func() error {
-						return flexlet.Run(ctx, cl, runner, replicaName, cores)
-					})
+					return runInPushMode(ctx, name, cores, cl, runner)
 				}
-				return grp.Wait()
+				return runInPullMode(ctx, name, replicas, cores, cl, runner)
 			},
 		}
 		return app.RunContext(ctx, os.Args)

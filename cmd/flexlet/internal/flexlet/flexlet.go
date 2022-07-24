@@ -27,7 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
+func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
 	tokens := make(chan struct{}, cores)
 	for i := 0; i < cores; i++ {
 		tokens <- struct{}{}
@@ -64,7 +64,7 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 	}
 }
 
-func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string) error {
+func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string) error {
 	task, err := peekTask(ctx, cl, name)
 	if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
 		return nil
