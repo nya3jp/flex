@@ -28,6 +28,7 @@ import (
 
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
+	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/urfave/cli/v2"
@@ -50,22 +51,20 @@ func runInPullMode(ctx context.Context, name string, replicas, cores int, cl fle
 }
 
 func runInPushMode(ctx context.Context, name string, cores int, cl flexletpb.FlexletServiceClient, runner *run.Runner) error {
-	tokens := make(chan struct{}, cores)
-	for i := 0; i < cores; i++ {
-		tokens <- struct{}{}
-	}
+	limiter := concurrent.NewLimiter(cores)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
-		select {
-		case <-tokens:
-		default:
+		if r.Method != http.MethodPost {
+			http.Error(w, "unsupported method", http.StatusBadRequest)
+			return
+		}
+
+		if !limiter.TryTake() {
 			http.Error(w, "ERROR: max parallelism reached", http.StatusInternalServerError)
 			return
 		}
-		defer func() {
-			tokens <- struct{}{}
-		}()
+		defer limiter.Done()
 
 		if err := flexlet.RunInPushMode(ctx, cl, runner, name); err != nil {
 			http.Error(w, fmt.Sprintf("ERROR: %v", err), http.StatusInternalServerError)

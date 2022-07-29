@@ -8,16 +8,16 @@ RUN go mod download
 
 # Build a static binary.
 COPY . ./
-RUN CGO_ENABLED=0 go install github.com/nya3jp/flex/cmd/testfs
+RUN CGO_ENABLED=0 go install github.com/nya3jp/flex/cmd/flexwatch
 
 FROM debian:latest
 
 WORKDIR /app
-COPY --from=builder /go/bin/testfs .
+COPY --from=builder /go/bin/flexwatch .
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 RUN useradd -M app
 ENV HOME=/app
 USER app
 
-ENTRYPOINT ["./testfs"]
+ENTRYPOINT ["./flexwatch"]

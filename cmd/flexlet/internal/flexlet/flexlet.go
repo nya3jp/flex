@@ -21,39 +21,43 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
+	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/flexletpb"
+	"github.com/nya3jp/flex/internal/flexletutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
-	tokens := make(chan struct{}, cores)
-	for i := 0; i < cores; i++ {
-		tokens <- struct{}{}
-	}
+	limiter := concurrent.NewLimiter(cores)
 
-	stop := startFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
-	defer stop()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go flexletutil.RunFletletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
 
 	log.Printf("INFO: Flexlet start")
 
 	for {
-		select {
-		case <-tokens:
-		case <-ctx.Done():
-			return ctx.Err()
+		if err := limiter.Take(ctx); err != nil {
+			return err
 		}
 
 		task, err := waitTaskWithRetry(ctx, cl, name)
 		if err != nil {
+			limiter.Done()
 			return err
 		}
 
 		go func() {
-			defer func() { tokens <- struct{}{} }()
-			stop := startTaskUpdater(ctx, cl, task.GetRef())
-			defer stop()
+			defer limiter.Done()
+
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
+			go flexletutil.RunTaskUpdater(ctx, cl, task.GetRef())
+
 			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 			result := runner.RunTask(ctx, task.GetSpec())
 			log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
@@ -73,8 +77,11 @@ func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 		return err
 	}
 
-	stop := startTaskUpdater(ctx, cl, task.GetRef())
-	defer stop()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go flexletutil.RunTaskUpdater(ctx, cl, task.GetRef())
+
 	log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 	result := runner.RunTask(ctx, task.GetSpec())
 	log.Printf("INFO: End task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
@@ -82,25 +89,6 @@ func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 		log.Printf("WARNING: FinishTask failed: %v", err)
 	}
 	return nil
-}
-
-func startFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, flexlet *flex.Flexlet) context.CancelFunc {
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		for {
-			status := &flex.FlexletStatus{
-				Flexlet: flexlet,
-				State:   flex.FlexletState_ONLINE,
-			}
-			if _, err := cl.UpdateFlexlet(ctx, &flexletpb.UpdateFlexletRequest{Status: status}); err != nil && ctx.Err() == nil {
-				log.Printf("WARNING: UpdateTasklet failed: %v", err)
-			}
-			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
-				break
-			}
-		}
-	}()
-	return cancel
 }
 
 func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
@@ -138,19 +126,4 @@ func peekTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletNam
 		return nil, err
 	}
 	return res.GetTask(), nil
-}
-
-func startTaskUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, ref *flexletpb.TaskRef) context.CancelFunc {
-	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		for {
-			if _, err := cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Ref: ref}); err != nil && ctx.Err() == nil {
-				log.Printf("WARNING: UpdateTask failed: %v", err)
-			}
-			if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
-				break
-			}
-		}
-	}()
-	return cancel
 }
