@@ -89,10 +89,10 @@ func main() {
 
 	if err := func() error {
 		app := &cli.App{
-			Name:  "flexwatch",
-			Usage: "Flexwatch",
+			Name:  "flexbot",
+			Usage: "Flexbot",
 			Flags: []cli.Flag{
-				&cli.StringFlag{Name: "name", Required: true, Usage: "Flexwatch name"},
+				&cli.StringFlag{Name: "name", Required: true, Usage: "Flexbot name"},
 				&cli.StringFlag{Name: "flexlet", Required: true, Usage: "Flexlet URL"},
 				&cli.IntFlag{Name: "parallelism", Required: true, Usage: "Number of flexlets run in parallel"},
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
