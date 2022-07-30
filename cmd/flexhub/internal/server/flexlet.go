@@ -24,7 +24,7 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
-	"github.com/nya3jp/flex/cmd/flexhub/internal/taskqueue"
+	"github.com/nya3jp/flex/cmd/flexhub/internal/waitqueue"
 	"github.com/nya3jp/flex/internal/flexletpb"
 )
 
@@ -32,14 +32,14 @@ type flexletServer struct {
 	flexletpb.UnimplementedFlexletServiceServer
 	meta  *database.MetaStore
 	fs    FS
-	queue *taskqueue.TaskQueue
+	queue *waitqueue.WaitQueue
 }
 
 func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 	return &flexletServer{
 		meta:  meta,
 		fs:    fs,
-		queue: taskqueue.New(meta),
+		queue: waitqueue.New(meta),
 	}
 }
 

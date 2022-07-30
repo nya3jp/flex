@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package taskqueue
+package waitqueue
 
 import (
 	"context"
@@ -28,23 +28,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type TaskQueue struct {
+type WaitQueue struct {
 	meta     *database.MetaStore
-	waitLock *concurrent.Limiter
+	lock *concurrent.Limiter
 }
 
-func New(meta *database.MetaStore) *TaskQueue {
-	return &TaskQueue{
+func New(meta *database.MetaStore) *WaitQueue {
+	return &WaitQueue{
 		meta:     meta,
-		waitLock: concurrent.NewLimiter(1),
+		lock: concurrent.NewLimiter(1),
 	}
 }
 
-func (q *TaskQueue) WaitTask(ctx context.Context, flexletName string) (*flexletpb.TaskRef, *flex.JobSpec, error) {
-	if err := q.waitLock.Take(ctx); err != nil {
+func (q *WaitQueue) WaitTask(ctx context.Context, flexletName string) (*flexletpb.TaskRef, *flex.JobSpec, error) {
+	if err := q.lock.Take(ctx); err != nil {
 		return nil, nil, fixError(ctx, err)
 	}
-	defer q.waitLock.Done()
+	defer q.lock.Done()
 
 	for {
 		taskID, spec, err := q.meta.TakeTask(ctx, flexletName)
