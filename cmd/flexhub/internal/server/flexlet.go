@@ -43,16 +43,6 @@ func newFlexletServer(meta *database.MetaStore, fs FS) *flexletServer {
 	}
 }
 
-func (s *flexletServer) CountPendingTasks(ctx context.Context, req *flexletpb.CountPendingTasksRequest) (*flexletpb.CountPendingTasksResponse, error) {
-	count, err := s.meta.CountPendingTasks(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &flexletpb.CountPendingTasksResponse{
-		Count: count,
-	}, nil
-}
-
 func (s *flexletServer) TakeTask(ctx context.Context, req *flexletpb.TakeTaskRequest) (*flexletpb.TakeTaskResponse, error) {
 	ref, jobSpec, err := func() (*flexletpb.TaskRef, *flex.JobSpec, error) {
 		if !req.GetWait() {

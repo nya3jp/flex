@@ -24,18 +24,17 @@ import (
 	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/flexletpb"
-	"github.com/nya3jp/flex/internal/flexletutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
+func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
 	limiter := concurrent.NewLimiter(cores)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go flexletutil.RunFletletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
+	go runFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
 
 	log.Printf("INFO: Flexlet start")
 
@@ -56,7 +55,7 @@ func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
-			go flexletutil.RunTaskUpdater(ctx, cl, task.GetRef())
+			go runTaskUpdater(ctx, cl, task.GetRef())
 
 			log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 			result := runner.RunTask(ctx, task.GetSpec())
@@ -68,7 +67,7 @@ func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 	}
 }
 
-func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string) error {
+func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
 	task, err := takeTask(ctx, cl, name)
 	if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
 		return nil
@@ -80,7 +79,8 @@ func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go flexletutil.RunTaskUpdater(ctx, cl, task.GetRef())
+	go runFlexletUpdater(ctx, cl, &flex.Flexlet{Name: name, Spec: &flex.FlexletSpec{Cores: int32(cores)}})
+	go runTaskUpdater(ctx, cl, task.GetRef())
 
 	log.Printf("INFO: Start task %s for job %d", task.GetRef().GetTaskId(), task.GetRef().GetJobId())
 	result := runner.RunTask(ctx, task.GetSpec())
@@ -126,4 +126,30 @@ func takeTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletNam
 		return nil, err
 	}
 	return res.GetTask(), nil
+}
+
+func runFlexletUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, flexlet *flex.Flexlet) error {
+	for {
+		status := &flex.FlexletStatus{
+			Flexlet: flexlet,
+			State:   flex.FlexletState_ONLINE,
+		}
+		if _, err := cl.UpdateFlexlet(ctx, &flexletpb.UpdateFlexletRequest{Status: status}); err != nil && ctx.Err() == nil {
+			log.Printf("WARNING: UpdateTasklet failed: %v", err)
+		}
+		if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
+			return err
+		}
+	}
+}
+
+func runTaskUpdater(ctx context.Context, cl flexletpb.FlexletServiceClient, ref *flexletpb.TaskRef) error {
+	for {
+		if _, err := cl.UpdateTask(ctx, &flexletpb.UpdateTaskRequest{Ref: ref}); err != nil && ctx.Err() == nil {
+			log.Printf("WARNING: UpdateTask failed: %v", err)
+		}
+		if err := ctxutil.Sleep(ctx, 10*time.Second); err != nil {
+			return err
+		}
+	}
 }

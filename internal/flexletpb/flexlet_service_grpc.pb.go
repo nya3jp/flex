@@ -22,7 +22,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FlexletServiceClient interface {
-	CountPendingTasks(ctx context.Context, in *CountPendingTasksRequest, opts ...grpc.CallOption) (*CountPendingTasksResponse, error)
 	TakeTask(ctx context.Context, in *TakeTaskRequest, opts ...grpc.CallOption) (*TakeTaskResponse, error)
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*UpdateTaskResponse, error)
 	FinishTask(ctx context.Context, in *FinishTaskRequest, opts ...grpc.CallOption) (*FinishTaskResponse, error)
@@ -35,15 +34,6 @@ type flexletServiceClient struct {
 
 func NewFlexletServiceClient(cc grpc.ClientConnInterface) FlexletServiceClient {
 	return &flexletServiceClient{cc}
-}
-
-func (c *flexletServiceClient) CountPendingTasks(ctx context.Context, in *CountPendingTasksRequest, opts ...grpc.CallOption) (*CountPendingTasksResponse, error) {
-	out := new(CountPendingTasksResponse)
-	err := c.cc.Invoke(ctx, "/flex.FlexletService/CountPendingTasks", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *flexletServiceClient) TakeTask(ctx context.Context, in *TakeTaskRequest, opts ...grpc.CallOption) (*TakeTaskResponse, error) {
@@ -86,7 +76,6 @@ func (c *flexletServiceClient) UpdateFlexlet(ctx context.Context, in *UpdateFlex
 // All implementations must embed UnimplementedFlexletServiceServer
 // for forward compatibility
 type FlexletServiceServer interface {
-	CountPendingTasks(context.Context, *CountPendingTasksRequest) (*CountPendingTasksResponse, error)
 	TakeTask(context.Context, *TakeTaskRequest) (*TakeTaskResponse, error)
 	UpdateTask(context.Context, *UpdateTaskRequest) (*UpdateTaskResponse, error)
 	FinishTask(context.Context, *FinishTaskRequest) (*FinishTaskResponse, error)
@@ -98,9 +87,6 @@ type FlexletServiceServer interface {
 type UnimplementedFlexletServiceServer struct {
 }
 
-func (UnimplementedFlexletServiceServer) CountPendingTasks(context.Context, *CountPendingTasksRequest) (*CountPendingTasksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CountPendingTasks not implemented")
-}
 func (UnimplementedFlexletServiceServer) TakeTask(context.Context, *TakeTaskRequest) (*TakeTaskResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TakeTask not implemented")
 }
@@ -124,24 +110,6 @@ type UnsafeFlexletServiceServer interface {
 
 func RegisterFlexletServiceServer(s grpc.ServiceRegistrar, srv FlexletServiceServer) {
 	s.RegisterService(&FlexletService_ServiceDesc, srv)
-}
-
-func _FlexletService_CountPendingTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CountPendingTasksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FlexletServiceServer).CountPendingTasks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/flex.FlexletService/CountPendingTasks",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FlexletServiceServer).CountPendingTasks(ctx, req.(*CountPendingTasksRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _FlexletService_TakeTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -223,10 +191,6 @@ var FlexletService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "flex.FlexletService",
 	HandlerType: (*FlexletServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CountPendingTasks",
-			Handler:    _FlexletService_CountPendingTasks_Handler,
-		},
 		{
 			MethodName: "TakeTask",
 			Handler:    _FlexletService_TakeTask_Handler,

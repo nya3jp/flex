@@ -22,18 +22,11 @@ import "flex.proto";
 import "internal/flexletpb/flexlet.proto";
 
 service FlexletService {
-  rpc CountPendingTasks(CountPendingTasksRequest) returns (CountPendingTasksResponse) {}
   rpc TakeTask(TakeTaskRequest) returns (TakeTaskResponse) {}
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {}
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse) {}
 
   rpc UpdateFlexlet(UpdateFlexletRequest) returns (UpdateFlexletResponse) {}
-}
-
-message CountPendingTasksRequest {}
-
-message CountPendingTasksResponse {
-  int64 count = 1;
 }
 
 message TakeTaskRequest {

@@ -16,11 +16,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -28,52 +25,12 @@ import (
 
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
-	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sys/unix"
 )
-
-func runInPullMode(ctx context.Context, name string, replicas, cores int, cl flexletpb.FlexletServiceClient, runner *run.Runner) error {
-	grp, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < replicas; i++ {
-		replicaName := name
-		if replicas > 1 {
-			replicaName += fmt.Sprintf(".%d", i)
-		}
-		grp.Go(func() error {
-			return flexlet.RunInPullMode(ctx, cl, runner, replicaName, cores)
-		})
-	}
-	return grp.Wait()
-}
-
-func runInPushMode(ctx context.Context, name string, cores int, cl flexletpb.FlexletServiceClient, runner *run.Runner) error {
-	limiter := concurrent.NewLimiter(cores)
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "unsupported method", http.StatusBadRequest)
-			return
-		}
-
-		if !limiter.TryTake() {
-			http.Error(w, "ERROR: max parallelism reached", http.StatusInternalServerError)
-			return
-		}
-		defer limiter.Done()
-
-		if err := flexlet.RunInPushMode(ctx, cl, runner, name); err != nil {
-			http.Error(w, fmt.Sprintf("ERROR: %v", err), http.StatusInternalServerError)
-			return
-		}
-		io.WriteString(w, "OK")
-	})
-	return http.ListenAndServe(":"+os.Getenv("PORT"), mux)
-}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
@@ -99,7 +56,7 @@ func main() {
 				&cli.StringFlag{Name: "hub", Required: true, Usage: "Flexhub URL"},
 				&cli.StringFlag{Name: "storedir", Value: filepath.Join(homeDir, ".cache/flexlet"), Usage: "Storage directory path"},
 				&cli.StringFlag{Name: "password", Usage: "Sets a Flexlet service password"},
-				&cli.BoolFlag{Name: "push", Usage: "Run in push mode"},
+				&cli.BoolFlag{Name: "oneoff", Usage: "Run in one-off mode"},
 				&cli.IntFlag{Name: "replicas-for-load-testing", Value: 1, Hidden: true},
 			},
 			Action: func(c *cli.Context) error {
@@ -108,7 +65,7 @@ func main() {
 				hubURL := c.String("hub")
 				storeDir := c.String("storedir")
 				password := c.String("password")
-				push := c.Bool("push")
+				oneoff := c.Bool("oneoff")
 				replicas := c.Int("replicas-for-load-testing")
 
 				runner, err := run.New(storeDir)
@@ -122,13 +79,21 @@ func main() {
 				}
 				cl := flexletpb.NewFlexletServiceClient(cc)
 
-				if push {
-					if replicas != 1 {
-						return errors.New("replicas not supported in push mode")
-					}
-					return runInPushMode(ctx, name, cores, cl, runner)
+				if oneoff {
+					return flexlet.RunOneOff(ctx, cl, runner, name, cores)
 				}
-				return runInPullMode(ctx, name, replicas, cores, cl, runner)
+
+				grp, ctx := errgroup.WithContext(ctx)
+				for i := 0; i < replicas; i++ {
+					replicaName := name
+					if replicas > 1 {
+						replicaName += fmt.Sprintf(".%d", i)
+					}
+					grp.Go(func() error {
+						return flexlet.Run(ctx, cl, runner, replicaName, cores)
+					})
+				}
+				return grp.Wait()
 			},
 		}
 		return app.RunContext(ctx, os.Args)
