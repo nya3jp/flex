@@ -21,6 +21,7 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
+	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"google.golang.org/grpc/codes"
@@ -29,25 +30,21 @@ import (
 
 type TaskQueue struct {
 	meta     *database.MetaStore
-	waitLock chan struct{}
+	waitLock *concurrent.Limiter
 }
 
 func New(meta *database.MetaStore) *TaskQueue {
-	waitLock := make(chan struct{}, 1)
-	waitLock <- struct{}{}
 	return &TaskQueue{
 		meta:     meta,
-		waitLock: waitLock,
+		waitLock: concurrent.NewLimiter(1),
 	}
 }
 
 func (q *TaskQueue) WaitTask(ctx context.Context, flexletName string) (*flexletpb.TaskRef, *flex.JobSpec, error) {
-	select {
-	case <-q.waitLock:
-	case <-ctx.Done():
-		return nil, nil, fixError(ctx, ctx.Err())
+	if err := q.waitLock.Take(ctx); err != nil {
+		return nil, nil, fixError(ctx, err)
 	}
-	defer func() { q.waitLock <- struct{}{} }()
+	defer q.waitLock.Done()
 
 	for {
 		taskID, spec, err := q.meta.TakeTask(ctx, flexletName)
