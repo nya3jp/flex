@@ -449,26 +449,6 @@ WHERE uuid = ? AND state = 'RUNNING'
 	return nil
 }
 
-func (m *MetaStore) CountPendingTasks(ctx context.Context) (count int64, err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("counting pending tasks: %w", err)
-		}
-	}()
-
-	row := m.db.QueryRowContext(ctx, `
-SELECT
-  COUNT(1)
-FROM jobs
-WHERE
-  state = 'PENDING'
-`)
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 func (m *MetaStore) UpdateTag(ctx context.Context, name, hash string) (err error) {
 	defer func() {
 		if err != nil {
