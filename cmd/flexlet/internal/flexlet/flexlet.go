@@ -69,7 +69,7 @@ func RunInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runne
 }
 
 func RunInPushMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string) error {
-	task, err := peekTask(ctx, cl, name)
+	task, err := takeTask(ctx, cl, name)
 	if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
 		return nil
 	}
@@ -111,17 +111,17 @@ func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, f
 func waitTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
-	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletName: flexletName})
+	res, err := cl.TakeTask(ctx, &flexletpb.TakeTaskRequest{FlexletName: flexletName, Wait: true})
 	if err != nil {
 		return nil, err
 	}
 	return res.GetTask(), nil
 }
 
-func peekTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
+func takeTask(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	res, err := cl.WaitTask(ctx, &flexletpb.WaitTaskRequest{FlexletName: flexletName, Peek: true})
+	res, err := cl.TakeTask(ctx, &flexletpb.TakeTaskRequest{FlexletName: flexletName, Wait: false})
 	if err != nil {
 		return nil, err
 	}

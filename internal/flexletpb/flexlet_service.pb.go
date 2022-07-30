@@ -120,17 +120,17 @@ func (x *CountPendingTasksResponse) GetCount() int64 {
 	return 0
 }
 
-type WaitTaskRequest struct {
+type TakeTaskRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	FlexletName string `protobuf:"bytes,1,opt,name=flexlet_name,json=flexletName,proto3" json:"flexlet_name,omitempty"`
-	Peek        bool   `protobuf:"varint,2,opt,name=peek,proto3" json:"peek,omitempty"`
+	Wait        bool   `protobuf:"varint,2,opt,name=wait,proto3" json:"wait,omitempty"`
 }
 
-func (x *WaitTaskRequest) Reset() {
-	*x = WaitTaskRequest{}
+func (x *TakeTaskRequest) Reset() {
+	*x = TakeTaskRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_internal_flexletpb_flexlet_service_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -138,13 +138,13 @@ func (x *WaitTaskRequest) Reset() {
 	}
 }
 
-func (x *WaitTaskRequest) String() string {
+func (x *TakeTaskRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WaitTaskRequest) ProtoMessage() {}
+func (*TakeTaskRequest) ProtoMessage() {}
 
-func (x *WaitTaskRequest) ProtoReflect() protoreflect.Message {
+func (x *TakeTaskRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_internal_flexletpb_flexlet_service_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -156,26 +156,26 @@ func (x *WaitTaskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WaitTaskRequest.ProtoReflect.Descriptor instead.
-func (*WaitTaskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use TakeTaskRequest.ProtoReflect.Descriptor instead.
+func (*TakeTaskRequest) Descriptor() ([]byte, []int) {
 	return file_internal_flexletpb_flexlet_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *WaitTaskRequest) GetFlexletName() string {
+func (x *TakeTaskRequest) GetFlexletName() string {
 	if x != nil {
 		return x.FlexletName
 	}
 	return ""
 }
 
-func (x *WaitTaskRequest) GetPeek() bool {
+func (x *TakeTaskRequest) GetWait() bool {
 	if x != nil {
-		return x.Peek
+		return x.Wait
 	}
 	return false
 }
 
-type WaitTaskResponse struct {
+type TakeTaskResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -183,8 +183,8 @@ type WaitTaskResponse struct {
 	Task *Task `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 }
 
-func (x *WaitTaskResponse) Reset() {
-	*x = WaitTaskResponse{}
+func (x *TakeTaskResponse) Reset() {
+	*x = TakeTaskResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_internal_flexletpb_flexlet_service_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -192,13 +192,13 @@ func (x *WaitTaskResponse) Reset() {
 	}
 }
 
-func (x *WaitTaskResponse) String() string {
+func (x *TakeTaskResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WaitTaskResponse) ProtoMessage() {}
+func (*TakeTaskResponse) ProtoMessage() {}
 
-func (x *WaitTaskResponse) ProtoReflect() protoreflect.Message {
+func (x *TakeTaskResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_internal_flexletpb_flexlet_service_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -210,12 +210,12 @@ func (x *WaitTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WaitTaskResponse.ProtoReflect.Descriptor instead.
-func (*WaitTaskResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use TakeTaskResponse.ProtoReflect.Descriptor instead.
+func (*TakeTaskResponse) Descriptor() ([]byte, []int) {
 	return file_internal_flexletpb_flexlet_service_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *WaitTaskResponse) GetTask() *Task {
+func (x *TakeTaskResponse) GetTask() *Task {
 	if x != nil {
 		return x.Task
 	}
@@ -507,11 +507,11 @@ var file_internal_flexletpb_flexlet_service_proto_rawDesc = []byte{
 	0x75, 0x6e, 0x74, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x48, 0x0a,
-	0x0f, 0x57, 0x61, 0x69, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x0f, 0x54, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x21, 0x0a, 0x0c, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x66, 0x6c, 0x65, 0x78, 0x6c, 0x65, 0x74, 0x4e,
-	0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x65, 0x65, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x04, 0x70, 0x65, 0x65, 0x6b, 0x22, 0x32, 0x0a, 0x10, 0x57, 0x61, 0x69, 0x74, 0x54,
+	0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x77, 0x61, 0x69, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x04, 0x77, 0x61, 0x69, 0x74, 0x22, 0x32, 0x0a, 0x10, 0x54, 0x61, 0x6b, 0x65, 0x54,
 	0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1e, 0x0a, 0x04, 0x74,
 	0x61, 0x73, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x66, 0x6c, 0x65, 0x78,
 	0x2e, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x04, 0x74, 0x61, 0x73, 0x6b, 0x22, 0x34, 0x0a, 0x11, 0x55,
@@ -541,10 +541,10 @@ var file_internal_flexletpb_flexlet_service_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x50,
 	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x08, 0x57, 0x61, 0x69, 0x74, 0x54, 0x61, 0x73,
-	0x6b, 0x12, 0x15, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x57, 0x61, 0x69, 0x74, 0x54, 0x61, 0x73,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x08, 0x54, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x73,
+	0x6b, 0x12, 0x15, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x54, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x73,
 	0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e,
-	0x57, 0x61, 0x69, 0x74, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x54, 0x61, 0x6b, 0x65, 0x54, 0x61, 0x73, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
 	0x22, 0x00, 0x12, 0x41, 0x0a, 0x0a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x61, 0x73, 0x6b,
 	0x12, 0x17, 0x2e, 0x66, 0x6c, 0x65, 0x78, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x54, 0x61,
 	0x73, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x66, 0x6c, 0x65, 0x78,
@@ -580,8 +580,8 @@ var file_internal_flexletpb_flexlet_service_proto_msgTypes = make([]protoimpl.Me
 var file_internal_flexletpb_flexlet_service_proto_goTypes = []interface{}{
 	(*CountPendingTasksRequest)(nil),  // 0: flex.CountPendingTasksRequest
 	(*CountPendingTasksResponse)(nil), // 1: flex.CountPendingTasksResponse
-	(*WaitTaskRequest)(nil),           // 2: flex.WaitTaskRequest
-	(*WaitTaskResponse)(nil),          // 3: flex.WaitTaskResponse
+	(*TakeTaskRequest)(nil),           // 2: flex.TakeTaskRequest
+	(*TakeTaskResponse)(nil),          // 3: flex.TakeTaskResponse
 	(*UpdateTaskRequest)(nil),         // 4: flex.UpdateTaskRequest
 	(*UpdateTaskResponse)(nil),        // 5: flex.UpdateTaskResponse
 	(*FinishTaskRequest)(nil),         // 6: flex.FinishTaskRequest
@@ -594,18 +594,18 @@ var file_internal_flexletpb_flexlet_service_proto_goTypes = []interface{}{
 	(*flex.FlexletStatus)(nil),        // 13: flex.FlexletStatus
 }
 var file_internal_flexletpb_flexlet_service_proto_depIdxs = []int32{
-	10, // 0: flex.WaitTaskResponse.task:type_name -> flex.Task
+	10, // 0: flex.TakeTaskResponse.task:type_name -> flex.Task
 	11, // 1: flex.UpdateTaskRequest.ref:type_name -> flex.TaskRef
 	11, // 2: flex.FinishTaskRequest.ref:type_name -> flex.TaskRef
 	12, // 3: flex.FinishTaskRequest.result:type_name -> flex.TaskResult
 	13, // 4: flex.UpdateFlexletRequest.status:type_name -> flex.FlexletStatus
 	0,  // 5: flex.FlexletService.CountPendingTasks:input_type -> flex.CountPendingTasksRequest
-	2,  // 6: flex.FlexletService.WaitTask:input_type -> flex.WaitTaskRequest
+	2,  // 6: flex.FlexletService.TakeTask:input_type -> flex.TakeTaskRequest
 	4,  // 7: flex.FlexletService.UpdateTask:input_type -> flex.UpdateTaskRequest
 	6,  // 8: flex.FlexletService.FinishTask:input_type -> flex.FinishTaskRequest
 	8,  // 9: flex.FlexletService.UpdateFlexlet:input_type -> flex.UpdateFlexletRequest
 	1,  // 10: flex.FlexletService.CountPendingTasks:output_type -> flex.CountPendingTasksResponse
-	3,  // 11: flex.FlexletService.WaitTask:output_type -> flex.WaitTaskResponse
+	3,  // 11: flex.FlexletService.TakeTask:output_type -> flex.TakeTaskResponse
 	5,  // 12: flex.FlexletService.UpdateTask:output_type -> flex.UpdateTaskResponse
 	7,  // 13: flex.FlexletService.FinishTask:output_type -> flex.FinishTaskResponse
 	9,  // 14: flex.FlexletService.UpdateFlexlet:output_type -> flex.UpdateFlexletResponse
@@ -648,7 +648,7 @@ func file_internal_flexletpb_flexlet_service_proto_init() {
 			}
 		}
 		file_internal_flexletpb_flexlet_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WaitTaskRequest); i {
+			switch v := v.(*TakeTaskRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -660,7 +660,7 @@ func file_internal_flexletpb_flexlet_service_proto_init() {
 			}
 		}
 		file_internal_flexletpb_flexlet_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WaitTaskResponse); i {
+			switch v := v.(*TakeTaskResponse); i {
 			case 0:
 				return &v.state
 			case 1:

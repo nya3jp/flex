@@ -53,9 +53,9 @@ func (s *flexletServer) CountPendingTasks(ctx context.Context, req *flexletpb.Co
 	}, nil
 }
 
-func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskRequest) (*flexletpb.WaitTaskResponse, error) {
+func (s *flexletServer) TakeTask(ctx context.Context, req *flexletpb.TakeTaskRequest) (*flexletpb.TakeTaskResponse, error) {
 	ref, jobSpec, err := func() (*flexletpb.TaskRef, *flex.JobSpec, error) {
-		if req.GetPeek() {
+		if !req.GetWait() {
 			return s.meta.TakeTask(ctx, req.GetFlexletName())
 		}
 		waitCtx, cancel := context.WithTimeout(ctx, time.Minute)
@@ -116,7 +116,7 @@ func (s *flexletServer) WaitTask(ctx context.Context, req *flexletpb.WaitTaskReq
 			Limits: jobSpec.GetLimits(),
 		},
 	}
-	return &flexletpb.WaitTaskResponse{Task: task}, nil
+	return &flexletpb.TakeTaskResponse{Task: task}, nil
 }
 
 func (s *flexletServer) UpdateTask(ctx context.Context, req *flexletpb.UpdateTaskRequest) (*flexletpb.UpdateTaskResponse, error) {

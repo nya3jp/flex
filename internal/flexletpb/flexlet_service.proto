@@ -23,7 +23,7 @@ import "internal/flexletpb/flexlet.proto";
 
 service FlexletService {
   rpc CountPendingTasks(CountPendingTasksRequest) returns (CountPendingTasksResponse) {}
-  rpc WaitTask(WaitTaskRequest) returns (WaitTaskResponse) {}
+  rpc TakeTask(TakeTaskRequest) returns (TakeTaskResponse) {}
   rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse) {}
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse) {}
 
@@ -36,12 +36,12 @@ message CountPendingTasksResponse {
   int64 count = 1;
 }
 
-message WaitTaskRequest {
+message TakeTaskRequest {
   string flexlet_name = 1;
-  bool peek = 2;
+  bool wait = 2;
 }
 
-message WaitTaskResponse {
+message TakeTaskResponse {
   Task task = 1;
 }
 
