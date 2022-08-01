@@ -29,13 +29,13 @@ import (
 )
 
 type WaitQueue struct {
-	meta     *database.MetaStore
+	meta *database.MetaStore
 	lock *concurrent.Limiter
 }
 
 func New(meta *database.MetaStore) *WaitQueue {
 	return &WaitQueue{
-		meta:     meta,
+		meta: meta,
 		lock: concurrent.NewLimiter(1),
 	}
 }

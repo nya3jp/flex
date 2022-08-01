@@ -16,6 +16,7 @@ package flexlet
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -27,6 +28,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var ErrNoPendingTask = errors.New("no pending task")
 
 func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
 	limiter := concurrent.NewLimiter(cores)
@@ -67,13 +70,13 @@ func Run(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Run
 	}
 }
 
-func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) error {
+func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores int) (*flexletpb.Task, *flex.TaskResult, error) {
 	task, err := takeTask(ctx, cl, name)
 	if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
-		return nil
+		return nil, nil, ErrNoPendingTask
 	}
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -88,7 +91,7 @@ func RunOneOff(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *r
 	if _, err := cl.FinishTask(ctx, &flexletpb.FinishTaskRequest{Ref: task.GetRef(), Result: result}); err != nil {
 		log.Printf("WARNING: FinishTask failed: %v", err)
 	}
-	return nil
+	return task, result, nil
 }
 
 func waitTaskWithRetry(ctx context.Context, cl flexletpb.FlexletServiceClient, flexletName string) (*flexletpb.Task, error) {

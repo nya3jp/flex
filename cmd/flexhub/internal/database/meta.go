@@ -644,11 +644,26 @@ FROM jobs
 SELECT
     IFNULL(SUM(IF(state = 'ONLINE', 1, 0)), 0),
     IFNULL(SUM(IF(state = 'OFFLINE', 1, 0)), 0),
-    IFNULL(SUM(IF(state = 'ONLINE', cores, 0)), 0)
+    IFNULL(SUM(IF(state = 'ONLINE' AND cores >= 0, cores, 0)), 0)
 FROM flexlets
 `)
-	var onlineFlexlets, offlineFlexlets, totalCores int32
-	if err := row.Scan(&onlineFlexlets, &offlineFlexlets, &totalCores); err != nil {
+	var onlineFlexlets, offlineFlexlets, totalFixedCores int32
+	if err := row.Scan(&onlineFlexlets, &offlineFlexlets, &totalFixedCores); err != nil {
+		return nil, err
+	}
+
+	row = m.db.QueryRowContext(ctx, `
+SELECT
+    IFNULL(SUM(1), 0)
+FROM jobs AS j
+    INNER JOIN tasks AS t ON (j.task_uuid = t.uuid)
+    INNER JOIN flexlets AS f ON (t.flexlet = f.name)
+WHERE
+    j.state = 'RUNNING' AND
+		f.cores >= 0
+`)
+	var busyFixedCores int32
+	if err := row.Scan(&busyFixedCores); err != nil {
 		return nil, err
 	}
 
@@ -661,7 +676,7 @@ FROM flexlets
 			OnlineFlexlets:  onlineFlexlets,
 			OfflineFlexlets: offlineFlexlets,
 			BusyCores:       runningJobs,
-			IdleCores:       totalCores - runningJobs,
+			IdleCores:       totalFixedCores - busyFixedCores,
 		},
 	}, nil
 }
