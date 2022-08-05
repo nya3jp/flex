@@ -36,6 +36,8 @@ func (p *Publisher) Close() error {
 	return p.client.Close()
 }
 
-func (p *Publisher) Send(ctx context.Context) *pubsub.PublishResult {
-	return p.topic.Publish(ctx, &pubsub.Message{})
+func (p *Publisher) Send(ctx context.Context) error {
+	result := p.topic.Publish(ctx, &pubsub.Message{})
+	_, err := result.Get(ctx)
+	return err
 }

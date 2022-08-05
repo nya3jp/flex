@@ -79,7 +79,9 @@ func (s *flexServer) SubmitJob(ctx context.Context, req *flex.SubmitJobRequest) 
 	}
 
 	if s.publisher != nil {
-		s.publisher.Send(ctx)
+		if err := s.publisher.Send(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	return &flex.SubmitJobResponse{Id: id}, nil
