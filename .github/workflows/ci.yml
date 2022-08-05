@@ -58,3 +58,10 @@ jobs:
           file: docker/flexlet.Dockerfile
           tags: ghcr.io/nya3jp/flexlet:latest
           push: true
+      - name: Build and push Flexbot Docker container
+        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: docker/build-push-action@v2
+        with:
+          file: docker/flexbot.Dockerfile
+          tags: ghcr.io/nya3jp/flexbot:latest
+          push: true

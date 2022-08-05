@@ -24,8 +24,8 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
-	"github.com/nya3jp/flex/cmd/flexhub/internal/sentinel"
 	"github.com/nya3jp/flex/internal/hashutil"
+	"github.com/nya3jp/flex/internal/pubsub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -33,16 +33,16 @@ import (
 
 type flexServer struct {
 	flex.UnimplementedFlexServiceServer
-	meta     *database.MetaStore
-	fs       FS
-	sentinel *sentinel.Sentinel
+	meta      *database.MetaStore
+	fs        FS
+	publisher *pubsub.Publisher
 }
 
-func newFlexServer(meta *database.MetaStore, fs FS, sentinel *sentinel.Sentinel) *flexServer {
+func newFlexServer(meta *database.MetaStore, fs FS, publisher *pubsub.Publisher) *flexServer {
 	return &flexServer{
-		meta:     meta,
-		fs:       fs,
-		sentinel: sentinel,
+		meta:      meta,
+		fs:        fs,
+		publisher: publisher,
 	}
 }
 
@@ -78,10 +78,8 @@ func (s *flexServer) SubmitJob(ctx context.Context, req *flex.SubmitJobRequest) 
 		return nil, err
 	}
 
-	if s.sentinel != nil {
-		if _, err := s.sentinel.Enqueue(ctx, id); err != nil {
-			return nil, err
-		}
+	if s.publisher != nil {
+		s.publisher.Send(ctx)
 	}
 
 	return &flex.SubmitJobResponse{Id: id}, nil

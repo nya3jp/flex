@@ -17,22 +17,20 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/filestorage"
-	"github.com/nya3jp/flex/cmd/flexhub/internal/sentinel"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/server"
 	"github.com/nya3jp/flex/internal/ctxutil"
+	"github.com/nya3jp/flex/internal/pubsub"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
 )
@@ -54,24 +52,13 @@ func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {
 	}
 }
 
-func parseSentinelSpec(ctx context.Context, spec string) (*sentinel.Sentinel, error) {
-	if spec == "" {
-		return nil, nil
-	}
-	v := strings.SplitN(spec, "=", 2)
-	if len(v) != 2 {
-		return nil, errors.New("invalid sentinel spec")
-	}
-	return sentinel.New(ctx, v[0], v[1])
-}
-
 func run(c *cli.Context) error {
 	ctx := c.Context
 	port := c.Int("port")
 	dbURL := c.String("db")
 	fsURL := c.String("fs")
 	password := c.String("password")
-	sentinelSpec := c.String("sentinel")
+	topicID := c.String("publish")
 
 	db, err := sql.Open("mysql", dbURL)
 	if err != nil {
@@ -87,9 +74,13 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	sentinel, err := parseSentinelSpec(ctx, sentinelSpec)
-	if err != nil {
-		return err
+	var publisher *pubsub.Publisher
+	if topicID != "" {
+		publisher, err = pubsub.NewPublisher(ctx, topicID)
+		if err != nil {
+			return err
+		}
+		defer publisher.Close()
 	}
 
 	go func() {
@@ -108,7 +99,7 @@ func run(c *cli.Context) error {
 		return err
 	}
 
-	return server.Run(ctx, port, meta, fs, password, sentinel)
+	return server.Run(ctx, port, meta, fs, password, publisher)
 }
 
 func main() {
@@ -128,7 +119,7 @@ func main() {
 			&cli.StringFlag{Name: "db", Required: true, Usage: `DB URL (ex. "username:password@tcp(hostname:port)/database?parseTime=true")`},
 			&cli.StringFlag{Name: "fs", Required: true, Usage: "File storage URL"},
 			&cli.StringFlag{Name: "password", Usage: "Protect services with a password"},
-			&cli.StringFlag{Name: "sentinel", Usage: `Sentinel spec (ex. "projects/name/locations/name/queues/name=https://url/of/sentinel"`},
+			&cli.StringFlag{Name: "publish", Usage: "PubSub topic ID to publish job events to"},
 		},
 		Action: run,
 	}
