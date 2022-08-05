@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/nya3jp/flex/internal/concurrent"
 	"github.com/nya3jp/flex/internal/pubsub"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
@@ -56,8 +57,18 @@ func main() {
 				ctx, cancel := context.WithCancel(ctx)
 				defer cancel()
 
+				limiter := concurrent.NewLimiter(parallelism)
+
 				return subscriber.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-					defer msg.Nack()
+					if err := limiter.Take(ctx); err != nil {
+						log.Printf("ERROR: %v", err)
+						return
+					}
+					defer limiter.Done()
+
+					// Ack immediately to run jobs beyond ack deadline.
+					msg.Ack()
+
 					if err := func() error {
 						res, err := http.Post(flexletURL, "application/octet-stream", &bytes.Buffer{})
 						if err != nil {
@@ -67,7 +78,6 @@ func main() {
 						if res.StatusCode/100 != 2 {
 							return fmt.Errorf("http status %d", res.StatusCode)
 						}
-						msg.Ack()
 						return nil
 					}(); err != nil {
 						log.Printf("ERROR: %v", err)
