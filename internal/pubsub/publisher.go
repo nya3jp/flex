@@ -37,7 +37,9 @@ func (p *Publisher) Close() error {
 }
 
 func (p *Publisher) Send(ctx context.Context) error {
-	result := p.topic.Publish(ctx, &pubsub.Message{})
+	result := p.topic.Publish(ctx, &pubsub.Message{
+		Data: []byte("{}"),
+	})
 	_, err := result.Get(ctx)
 	return err
 }
