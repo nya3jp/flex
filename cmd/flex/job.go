@@ -134,9 +134,32 @@ var cmdJob = &cli.Command{
 
 var cmdRun = &cli.Command{
 	Name:      "run",
-	Usage:     "Runs a job.",
+	Usage:     `Runs a job (shorthand for "job create", "job wait" and "job outputs")`,
 	UsageText: "flex run [command options] executable [args...]\n   flex run [command options] -s command",
-	Flags:     jobCreateFlags,
+	Description: `Runs a job.
+
+A job is a unit of work to be run on Flex. It consists of several attributes,
+but most important ones are:
+
+  - a command line to execute
+  - references to zero or more packages to be installed before execution
+
+Specify a command line as positional parameters. It is passed to exec(2) by
+default, but you can set --shell to pass a command to a shell, in which case
+the number of positional parameters must be exactly 1.
+
+You can add package references to a job in one of two ways, or both:
+
+  - Use --file option (can be repeated) to upload specified local files to
+    create a one-off package and attach it to the job.
+  - Use --package option (can be repeated) to attach an existing package to
+    the job.
+
+This command submits a job, waits for its completion, and prints its results,
+including stdout/stderr. It can be considered as a shorthand for the sequence
+of three commands: "flex job create", "flex job wait" and "flex job outputs".
+`,
+	Flags: jobCreateFlags,
 	Action: func(c *cli.Context) error {
 		args, err := makeArgs(c)
 		if err != nil {
@@ -163,7 +186,31 @@ var cmdJobCreate = &cli.Command{
 	Aliases:   []string{"new"},
 	Usage:     "Creates a new job.",
 	UsageText: "flex job create [command options] executable [args...]\n   flex job create [command options] -s command",
-	Flags:     jobCreateFlags,
+	Description: `Creates a new job.
+
+A job is a unit of work to be run on Flex. It consists of several attributes,
+but most important ones are:
+
+  - a command line to execute
+  - references to zero or more packages to be installed before execution
+
+Specify a command line as positional parameters. It is passed to exec(2) by
+default, but you can set --shell to pass a command to a shell, in which case
+the number of positional parameters must be exactly 1.
+
+You can add package references to a job in one of two ways, or both:
+
+  - Use --file option (can be repeated) to upload specified local files to
+    create a one-off package and attach it to the job.
+  - Use --package option (can be repeated) to attach an existing package to
+    the job.
+
+This command finishes as soon as it successfully submits a job. It does not
+wait for the completion of the job.
+
+This command prints a job ID to the standard output on success.
+`,
+	Flags: jobCreateFlags,
 	Action: func(c *cli.Context) error {
 		args, err := makeArgs(c)
 		if err != nil {
@@ -184,6 +231,11 @@ var cmdJobWait = &cli.Command{
 	Name:      "wait",
 	Usage:     "Waits a job.",
 	ArgsUsage: "job-id",
+	Description: `Waits a job.
+
+This command waits for a job completion. It can be used as a precondition for
+other commands requiring a job to be finished, e.g. "flex job outputs".
+`,
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -207,8 +259,12 @@ var cmdJobWait = &cli.Command{
 var cmdJobOutputs = &cli.Command{
 	Name:      "outputs",
 	Aliases:   []string{"cat"},
-	Usage:     "Prints out job outputs",
+	Usage:     "Prints out job outputs.",
 	ArgsUsage: "job-id",
+	Description: `Prints out job outputs.
+
+Prints the job output to stdout/stderr. The job should have already finished.
+`,
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -262,6 +318,10 @@ var cmdJobList = &cli.Command{
 	Aliases:   []string{"ls"},
 	Usage:     "Lists jobs.",
 	ArgsUsage: "",
+	Description: `Lists jobs.
+
+Jobs are sorted in the decreasing order of their IDs.
+`,
 	Flags: []cli.Flag{
 		flagLimit,
 		flagBefore,
@@ -313,6 +373,10 @@ var cmdJobLabel = &cli.Command{
 	Name:      "label",
 	Usage:     "Updates job labels.",
 	ArgsUsage: "job-id",
+	Description: `Updates job labels.
+
+This command allows updating job labels after submission.
+`,
 	Flags: []cli.Flag{
 		flagAdd,
 		flagDelete,

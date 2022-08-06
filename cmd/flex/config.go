@@ -88,6 +88,15 @@ var cmdConfigure = &cli.Command{
 	Name:    "configure",
 	Aliases: []string{"config"},
 	Usage:   "Set up configuration.",
+	Description: `Sets up configuration needed to run jobs on Flex.
+
+In particular, you need to provide the following two values:
+
+  1. Flexhub URL
+  2. Password
+
+Contact the server admin to know these values.
+`,
 	Action: func(c *cli.Context) error {
 		cfg := config
 
