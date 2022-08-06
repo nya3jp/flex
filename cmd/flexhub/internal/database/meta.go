@@ -175,7 +175,7 @@ func (m *MetaStore) ListJobs(ctx context.Context, state flex.JobState, label str
 	query, args := func() (string, []interface{}) {
 		if label == "" {
 			const query = `
-SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
+SELECT j.id, j.state, j.task_uuid, t.flexlet, j.created, t.started, t.finished, j.request, t.response
 FROM jobs j
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
 WHERE j.id < ? AND (? OR j.state = ?)
