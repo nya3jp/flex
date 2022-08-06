@@ -30,6 +30,7 @@ service FlexService {
 
   rpc InsertPackage(stream InsertPackageRequest) returns (InsertPackageResponse) {}
   rpc GetPackage(GetPackageRequest) returns (GetPackageResponse) {}
+  rpc FetchPackage(FetchPackageRequest) returns (FetchPackageResponse) {}
 
   rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse) {}
   rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {}
@@ -115,6 +116,17 @@ message GetPackageRequest {
 
 message GetPackageResponse {
   Package package = 1;
+}
+
+message FetchPackageRequest {
+  oneof type {
+    string hash = 1;
+    string tag = 2;
+  }
+}
+
+message FetchPackageResponse {
+  FileLocation location = 1;
 }
 
 message UpdateTagRequest {

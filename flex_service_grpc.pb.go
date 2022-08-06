@@ -30,6 +30,7 @@ type FlexServiceClient interface {
 	UpdateJobLabels(ctx context.Context, in *UpdateJobLabelsRequest, opts ...grpc.CallOption) (*UpdateJobLabelsResponse, error)
 	InsertPackage(ctx context.Context, opts ...grpc.CallOption) (FlexService_InsertPackageClient, error)
 	GetPackage(ctx context.Context, in *GetPackageRequest, opts ...grpc.CallOption) (*GetPackageResponse, error)
+	FetchPackage(ctx context.Context, in *FetchPackageRequest, opts ...grpc.CallOption) (*FetchPackageResponse, error)
 	UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...grpc.CallOption) (*UpdateTagResponse, error)
 	ListTags(ctx context.Context, in *ListTagsRequest, opts ...grpc.CallOption) (*ListTagsResponse, error)
 	ListFlexlets(ctx context.Context, in *ListFlexletsRequest, opts ...grpc.CallOption) (*ListFlexletsResponse, error)
@@ -141,6 +142,15 @@ func (c *flexServiceClient) GetPackage(ctx context.Context, in *GetPackageReques
 	return out, nil
 }
 
+func (c *flexServiceClient) FetchPackage(ctx context.Context, in *FetchPackageRequest, opts ...grpc.CallOption) (*FetchPackageResponse, error) {
+	out := new(FetchPackageResponse)
+	err := c.cc.Invoke(ctx, "/flex.FlexService/FetchPackage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *flexServiceClient) UpdateTag(ctx context.Context, in *UpdateTagRequest, opts ...grpc.CallOption) (*UpdateTagResponse, error) {
 	out := new(UpdateTagResponse)
 	err := c.cc.Invoke(ctx, "/flex.FlexService/UpdateTag", in, out, opts...)
@@ -189,6 +199,7 @@ type FlexServiceServer interface {
 	UpdateJobLabels(context.Context, *UpdateJobLabelsRequest) (*UpdateJobLabelsResponse, error)
 	InsertPackage(FlexService_InsertPackageServer) error
 	GetPackage(context.Context, *GetPackageRequest) (*GetPackageResponse, error)
+	FetchPackage(context.Context, *FetchPackageRequest) (*FetchPackageResponse, error)
 	UpdateTag(context.Context, *UpdateTagRequest) (*UpdateTagResponse, error)
 	ListTags(context.Context, *ListTagsRequest) (*ListTagsResponse, error)
 	ListFlexlets(context.Context, *ListFlexletsRequest) (*ListFlexletsResponse, error)
@@ -223,6 +234,9 @@ func (UnimplementedFlexServiceServer) InsertPackage(FlexService_InsertPackageSer
 }
 func (UnimplementedFlexServiceServer) GetPackage(context.Context, *GetPackageRequest) (*GetPackageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPackage not implemented")
+}
+func (UnimplementedFlexServiceServer) FetchPackage(context.Context, *FetchPackageRequest) (*FetchPackageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchPackage not implemented")
 }
 func (UnimplementedFlexServiceServer) UpdateTag(context.Context, *UpdateTagRequest) (*UpdateTagResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTag not implemented")
@@ -401,6 +415,24 @@ func _FlexService_GetPackage_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FlexService_FetchPackage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FetchPackageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlexServiceServer).FetchPackage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/flex.FlexService/FetchPackage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlexServiceServer).FetchPackage(ctx, req.(*FetchPackageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FlexService_UpdateTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateTagRequest)
 	if err := dec(in); err != nil {
@@ -507,6 +539,10 @@ var FlexService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPackage",
 			Handler:    _FlexService_GetPackage_Handler,
+		},
+		{
+			MethodName: "FetchPackage",
+			Handler:    _FlexService_FetchPackage_Handler,
 		},
 		{
 			MethodName: "UpdateTag",

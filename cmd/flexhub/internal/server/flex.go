@@ -218,6 +218,43 @@ func (s *flexServer) GetPackage(ctx context.Context, req *flex.GetPackageRequest
 	}, nil
 }
 
+func (s *flexServer) FetchPackage(ctx context.Context, req *flex.FetchPackageRequest) (*flex.FetchPackageResponse, error) {
+	if tag := req.GetTag(); tag != "" {
+		hash, err := s.meta.LookupTag(ctx, tag)
+		if err != nil {
+			return nil, err
+		}
+		req.Type = &flex.FetchPackageRequest_Hash{Hash: hash}
+	}
+	hash := req.GetHash()
+	if !hashutil.IsStdHash(hash) {
+		return nil, errors.New("invalid package hash")
+	}
+	path := pathForPackage(hash)
+
+	err := s.fs.Exists(ctx, path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, status.Errorf(codes.NotFound, "package not found: %s: %v", hash, err)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	url, err := s.fs.PresignedURLForGet(ctx, path, time.Minute)
+	if err != nil {
+		return nil, err
+	}
+
+	loc := &flex.FileLocation{
+		CanonicalUrl: s.fs.CanonicalURL(path),
+		PresignedUrl: url,
+	}
+
+	return &flex.FetchPackageResponse{
+		Location: loc,
+	}, nil
+}
+
 func (s *flexServer) UpdateTag(ctx context.Context, req *flex.UpdateTagRequest) (*flex.UpdateTagResponse, error) {
 	tag := req.GetTag()
 	name := tag.GetName()
