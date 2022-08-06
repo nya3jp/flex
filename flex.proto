@@ -19,6 +19,7 @@ package flex;
 option go_package = "github.com/nya3jp/flex";
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
 message Job {
   int64 id = 1;
@@ -57,6 +58,9 @@ message JobStatus {
   string task_id = 3;
   string flexlet_name = 4;
   TaskResult result = 5;
+  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp started = 7;
+  google.protobuf.Timestamp finished = 8;
 }
 
 enum JobState {

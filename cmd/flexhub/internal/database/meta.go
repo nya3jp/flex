@@ -21,12 +21,14 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/hashutil"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 //go:embed schema.mysql.sql
@@ -141,7 +143,7 @@ func (m *MetaStore) GetJob(ctx context.Context, id int64) (status *flex.JobStatu
 	}()
 
 	rows, err := m.db.QueryContext(ctx, `
-SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
+SELECT j.id, j.state, j.task_uuid, t.flexlet, j.created, t.started, t.finished, j.request, t.response
 FROM jobs j
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
 WHERE j.id = ?
@@ -189,7 +191,7 @@ LIMIT ?
 		}
 
 		const query = `
-SELECT j.id, j.state, j.task_uuid, t.flexlet, j.request, t.response
+SELECT j.id, j.state, j.task_uuid, t.flexlet, j.created, t.started, t.finished, j.request, t.response
 FROM labels l
 	INNER JOIN jobs j ON (l.job_id = j.id)
     LEFT OUTER JOIN tasks t ON (j.task_uuid = t.uuid)
@@ -688,8 +690,10 @@ func scanJobStatuses(rows *sql.Rows) ([]*flex.JobStatus, error) {
 		var stateStr string
 		var taskIDPtr *string
 		var flexletNamePtr *string
+		var created time.Time
+		var started, finished *time.Time
 		var req, res []byte
-		if err := rows.Scan(&id, &stateStr, &taskIDPtr, &flexletNamePtr, &req, &res); err != nil {
+		if err := rows.Scan(&id, &stateStr, &taskIDPtr, &flexletNamePtr, &created, &started, &finished, &req, &res); err != nil {
 			return nil, err
 		}
 
@@ -716,6 +720,14 @@ func scanJobStatuses(rows *sql.Rows) ([]*flex.JobStatus, error) {
 			flexletName = *flexletNamePtr
 		}
 
+		var startedProto, finishedProto *timestamppb.Timestamp
+		if started != nil {
+			startedProto = timestamppb.New(*started)
+		}
+		if finished != nil {
+			finishedProto = timestamppb.New(*finished)
+		}
+
 		jobs = append(jobs, &flex.JobStatus{
 			Job: &flex.Job{
 				Id:   id,
@@ -725,6 +737,9 @@ func scanJobStatuses(rows *sql.Rows) ([]*flex.JobStatus, error) {
 			TaskId:      taskID,
 			FlexletName: flexletName,
 			Result:      &result,
+			Created:     timestamppb.New(created),
+			Started:     startedProto,
+			Finished:    finishedProto,
 		})
 	}
 	return jobs, nil
