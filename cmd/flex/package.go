@@ -17,6 +17,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"os/exec"
 
 	"github.com/urfave/cli/v2"
 
@@ -37,8 +42,10 @@ var cmdPackage = &cli.Command{
 	Subcommands: []*cli.Command{
 		cmdPackageCreate,
 		cmdPackageTag,
-		cmdPackageInfo,
+		cmdPackageResolve,
 		cmdPackageList,
+		cmdPackageInspect,
+		cmdPackageDownload,
 	},
 }
 
@@ -94,11 +101,10 @@ var cmdPackageTag = &cli.Command{
 	},
 }
 
-var cmdPackageInfo = &cli.Command{
-	Name:      "info",
-	Aliases:   []string{"get"},
-	Usage:     "Shows package info.",
-	ArgsUsage: "{hash|tag}",
+var cmdPackageResolve = &cli.Command{
+	Name:      "resolve",
+	Usage:     "Resolves a tag to a hash.",
+	ArgsUsage: "tag",
 	Flags: []cli.Flag{
 		flagJSON,
 	},
@@ -142,6 +148,117 @@ var cmdPackageList = &cli.Command{
 				return err
 			}
 			newOutputFormatter(c).Tags(res.GetTags())
+			return nil
+		})
+	},
+}
+
+var cmdPackageInspect = &cli.Command{
+	Name:      "inspect",
+	Usage:     "Prints contents of a package.",
+	ArgsUsage: "{hash|tag}",
+	Action: func(c *cli.Context) error {
+		if c.NArg() != 1 {
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
+		}
+		name := c.Args().Get(0)
+
+		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
+			var req *flex.FetchPackageRequest
+			if hashutil.IsStdHash(name) {
+				req = &flex.FetchPackageRequest{Type: &flex.FetchPackageRequest_Hash{Hash: name}}
+			} else {
+				req = &flex.FetchPackageRequest{Type: &flex.FetchPackageRequest_Tag{Tag: name}}
+			}
+			res, err := cl.FetchPackage(ctx, req)
+			if err != nil {
+				return err
+			}
+
+			url := res.GetLocation().GetPresignedUrl()
+			r, err := http.Get(url)
+			if err != nil {
+				return err
+			}
+			defer r.Body.Close()
+
+			if r.StatusCode != http.StatusOK {
+				return fmt.Errorf("http status %d", r.StatusCode)
+			}
+
+			cmd := exec.Command("tar", "tvz")
+			cmd.Stdin = r.Body
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return err
+			}
+			return nil
+		})
+	},
+}
+
+var flagPackageOutput = &cli.StringFlag{
+	Name:    "output",
+	Aliases: []string{"o"},
+	Usage:   "File path to download a package to (default: ./<name>.tar.gz)",
+}
+
+var cmdPackageDownload = &cli.Command{
+	Name:      "download",
+	Usage:     "Downloads a package.",
+	ArgsUsage: "{hash|tag}",
+	Flags: []cli.Flag{
+		flagPackageOutput,
+	},
+	Action: func(c *cli.Context) error {
+		if c.NArg() != 1 {
+			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
+		}
+		name := c.Args().Get(0)
+		outputPath := c.String(flagPackage.Name)
+		if outputPath == "" {
+			outputPath = fmt.Sprintf("./%s.tar.gz", name)
+		}
+
+		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
+			var req *flex.FetchPackageRequest
+			if hashutil.IsStdHash(name) {
+				req = &flex.FetchPackageRequest{Type: &flex.FetchPackageRequest_Hash{Hash: name}}
+			} else {
+				req = &flex.FetchPackageRequest{Type: &flex.FetchPackageRequest_Tag{Tag: name}}
+			}
+			res, err := cl.FetchPackage(ctx, req)
+			if err != nil {
+				return err
+			}
+
+			url := res.GetLocation().GetPresignedUrl()
+			r, err := http.Get(url)
+			if err != nil {
+				return err
+			}
+			defer r.Body.Close()
+
+			if r.StatusCode != http.StatusOK {
+				return fmt.Errorf("http status %d", r.StatusCode)
+			}
+
+			f, err := os.Create(outputPath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			if _, err := io.Copy(f, r.Body); err != nil {
+				return err
+			}
+
+			if err := f.Close(); err != nil {
+				return err
+			}
+
+			log.Printf("Saved to %s", outputPath)
 			return nil
 		})
 	},
