@@ -48,6 +48,12 @@ var flagPassword = &cli.StringFlag{
 	DefaultText: "<hidden>",
 }
 
+var flagJSON = &cli.BoolFlag{
+	Name:    "json",
+	Aliases: []string{"j"},
+	Usage:   "Prints results in JSON.",
+}
+
 func runCmd(c *cli.Context, f func(ctx context.Context, cl flex.FlexServiceClient) error) error {
 	ctx := c.Context
 	hubURL := c.String(flagHub.Name)

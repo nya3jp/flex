@@ -29,6 +29,7 @@ var app = &cli.App{
 	Flags: []cli.Flag{
 		flagHub,
 		flagPassword,
+		flagJSON,
 	},
 	HideHelpCommand: true,
 	Commands: []*cli.Command{
