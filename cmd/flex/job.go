@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -234,6 +233,9 @@ var cmdJobInfo = &cli.Command{
 	Aliases:   []string{"get"},
 	Usage:     "Shows job info.",
 	ArgsUsage: "job-id",
+	Flags: []cli.Flag{
+		flagJSON,
+	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -249,9 +251,8 @@ var cmdJobInfo = &cli.Command{
 				return err
 			}
 			job := res.GetJob()
-			enc := json.NewEncoder(os.Stdout)
-			enc.SetIndent("", "  ")
-			return enc.Encode(job)
+			newOutputFormatter(c).JobStatus(job)
+			return nil
 		})
 	},
 }
@@ -266,6 +267,7 @@ var cmdJobList = &cli.Command{
 		flagBefore,
 		flagState,
 		flagLabel,
+		flagJSON,
 	},
 	Action: func(c *cli.Context) error {
 		limit := c.Int64(flagLimit.Name)
@@ -301,12 +303,8 @@ var cmdJobList = &cli.Command{
 				return err
 			}
 			jobs := res.GetJobs()
-			if jobs == nil {
-				jobs = make([]*flex.JobStatus, 0)
-			}
-			enc := json.NewEncoder(os.Stdout)
-			enc.SetIndent("", "  ")
-			return enc.Encode(jobs)
+			newOutputFormatter(c).JobStatuses(jobs)
+			return nil
 		})
 	},
 }

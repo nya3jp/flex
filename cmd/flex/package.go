@@ -16,9 +16,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/urfave/cli/v2"
 
@@ -77,16 +75,20 @@ var cmdPackageTag = &cli.Command{
 	Name:      "tag",
 	Usage:     "Sets a tag to a package.",
 	ArgsUsage: "tag hash",
+	Flags: []cli.Flag{
+		flagJSON,
+	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 2 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
 		}
 		tag, hash := c.Args().Get(0), c.Args().Get(1)
 		return runCmd(c, func(ctx context.Context, cl flex.FlexServiceClient) error {
-			if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: &flex.Tag{Name: tag, Hash: hash}}); err != nil {
+			tag := &flex.Tag{Name: tag, Hash: hash}
+			if _, err := cl.UpdateTag(ctx, &flex.UpdateTagRequest{Tag: tag}); err != nil {
 				return err
 			}
-			fmt.Printf("%s\t%s\n", tag, hash)
+			newOutputFormatter(c).Tag(tag)
 			return nil
 		})
 	},
@@ -97,6 +99,9 @@ var cmdPackageInfo = &cli.Command{
 	Aliases:   []string{"get"},
 	Usage:     "Shows package info.",
 	ArgsUsage: "{hash|tag}",
+	Flags: []cli.Flag{
+		flagJSON,
+	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() != 1 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -113,9 +118,8 @@ var cmdPackageInfo = &cli.Command{
 			if err != nil {
 				return err
 			}
-			enc := json.NewEncoder(os.Stdout)
-			enc.SetIndent("", "  ")
-			return enc.Encode(res.GetPackage())
+			newOutputFormatter(c).Package(res.GetPackage())
+			return nil
 		})
 	},
 }
@@ -125,6 +129,9 @@ var cmdPackageList = &cli.Command{
 	Aliases:   []string{"ls"},
 	Usage:     "Lists tagged packages.",
 	ArgsUsage: "",
+	Flags: []cli.Flag{
+		flagJSON,
+	},
 	Action: func(c *cli.Context) error {
 		if c.NArg() > 0 {
 			cli.ShowSubcommandHelpAndExit(c, exitCodeHelp)
@@ -134,9 +141,7 @@ var cmdPackageList = &cli.Command{
 			if err != nil {
 				return err
 			}
-			for _, tag := range res.GetTags() {
-				fmt.Printf("%s\t%s\n", tag.GetName(), tag.GetHash())
-			}
+			newOutputFormatter(c).Tags(res.GetTags())
 			return nil
 		})
 	},

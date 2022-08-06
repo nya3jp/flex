@@ -27,6 +27,7 @@ import (
 
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flex/internal/detar"
+	"github.com/nya3jp/flex/cmd/flex/internal/formatter"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/nya3jp/flex/internal/hashutil"
 )
@@ -139,4 +140,20 @@ func ensurePackage(ctx context.Context, cl flex.FlexServiceClient, names []strin
 		return "", err
 	}
 	return res.GetHash(), nil
+}
+
+type outputFormatter interface {
+	JobStatus(jobStatus *flex.JobStatus)
+	JobStatuses(jobStatuses []*flex.JobStatus)
+	Package(pkg *flex.Package)
+	Tag(tag *flex.Tag)
+	Tags(tags []*flex.Tag)
+}
+
+func newOutputFormatter(c *cli.Context) outputFormatter {
+	json := c.Bool(flagJSON.Name)
+	if json {
+		return formatter.NewJSON(os.Stdout)
+	}
+	return formatter.NewText(os.Stdout)
 }
