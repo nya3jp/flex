@@ -24,11 +24,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/hashutil"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 //go:embed schema.mysql.sql

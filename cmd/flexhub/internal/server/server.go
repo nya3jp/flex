@@ -22,13 +22,14 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/pubsub"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
 )
 
 func newDualHandler(grpcServer *grpc.Server, restServer http.Handler) http.Handler {

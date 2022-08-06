@@ -29,11 +29,12 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/sys/unix"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/filecache"
 	"github.com/nya3jp/flex/internal/flexletpb"
-	"golang.org/x/sys/unix"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type Runner struct {

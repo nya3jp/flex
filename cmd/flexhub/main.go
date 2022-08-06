@@ -26,13 +26,14 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/urfave/cli/v2"
+	"golang.org/x/sys/unix"
+
 	"github.com/nya3jp/flex/cmd/flexhub/internal/database"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/filestorage"
 	"github.com/nya3jp/flex/cmd/flexhub/internal/server"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/pubsub"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/sys/unix"
 )
 
 func newFileSystem(ctx context.Context, fsURL string) (server.FS, error) {

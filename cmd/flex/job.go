@@ -27,11 +27,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/urfave/cli/v2"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/ctxutil"
 	"github.com/nya3jp/flex/internal/hashutil"
-	"github.com/urfave/cli/v2"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var flagPriority = &cli.IntFlag{

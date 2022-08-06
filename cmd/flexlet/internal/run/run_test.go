@@ -29,12 +29,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/nya3jp/flex"
-	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
-	"github.com/nya3jp/flex/internal/flexletpb"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
+	"github.com/nya3jp/flex/internal/flexletpb"
 )
 
 func TestRunner_RunTask(t *testing.T) {

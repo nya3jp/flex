@@ -23,10 +23,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/nya3jp/flex/internal/concurrent"
-	"github.com/nya3jp/flex/internal/pubsub"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
+
+	"github.com/nya3jp/flex/internal/concurrent"
+	"github.com/nya3jp/flex/internal/pubsub"
 )
 
 func main() {

@@ -17,8 +17,9 @@ package restfix
 import (
 	"errors"
 
-	"github.com/nya3jp/flex"
 	"google.golang.org/protobuf/types/known/durationpb"
+
+	"github.com/nya3jp/flex"
 )
 
 func JobLimits(limits *flex.JobLimits) error {

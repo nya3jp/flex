@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/urfave/cli/v2"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/internal/hashutil"
-	"github.com/urfave/cli/v2"
 )
 
 var flagTag = &cli.StringSliceFlag{

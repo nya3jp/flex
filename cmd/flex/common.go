@@ -21,13 +21,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/nya3jp/flex"
 	"github.com/nya3jp/flex/cmd/flex/internal/detar"
 	"github.com/nya3jp/flex/internal/grpcutil"
 	"github.com/nya3jp/flex/internal/hashutil"
-	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const exitCodeHelp = 2

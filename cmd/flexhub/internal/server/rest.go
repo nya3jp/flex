@@ -21,14 +21,15 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/nya3jp/flex"
-	"github.com/nya3jp/flex/cmd/flexhub/internal/restfix"
-	"github.com/nya3jp/flex/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/nya3jp/flex"
+	"github.com/nya3jp/flex/cmd/flexhub/internal/restfix"
+	"github.com/nya3jp/flex/internal/grpcutil"
 )
 
 func init() {

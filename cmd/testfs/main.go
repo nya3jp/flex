@@ -27,9 +27,10 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/nya3jp/flex/internal/hashutil"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
+
+	"github.com/nya3jp/flex/internal/hashutil"
 )
 
 type handler struct {

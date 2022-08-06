@@ -26,13 +26,14 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sys/unix"
+
 	"github.com/nya3jp/flex/cmd/flexlet/internal/flexlet"
 	"github.com/nya3jp/flex/cmd/flexlet/internal/run"
 	"github.com/nya3jp/flex/internal/flexletpb"
 	"github.com/nya3jp/flex/internal/grpcutil"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sys/unix"
 )
 
 func runInPullMode(ctx context.Context, cl flexletpb.FlexletServiceClient, runner *run.Runner, name string, cores, replicas int) error {
