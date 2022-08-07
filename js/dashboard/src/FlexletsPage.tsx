@@ -22,12 +22,16 @@ function TableRow({flexlet}: { flexlet: FlexletStatus }): React.ReactElement {
       flexlet.state === 'ONLINE' ?
           <span className="badge bg-success">Online</span> :
           <span className="badge bg-secondary">Offline</span>;
+  const cores =
+      flexlet.flexlet.spec.cores < 0 ?
+          flexlet.currentJobs.length :
+          flexlet.flexlet.spec.cores;
   return (
       <tr>
         <td>{badge}</td>
         <td className="text-ellipsis">{flexlet.flexlet.name}</td>
         <td>
-          {flexlet.currentJobs.length} / {flexlet.flexlet.spec.cores}
+          {flexlet.currentJobs.length} / {cores}
         </td>
         <td>
           <ul className="list-unstyled mb-0">
