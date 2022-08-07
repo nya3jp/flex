@@ -2,7 +2,8 @@
 
 Flex is a simple workload distribution system.
 
-## Usage
+## Synopsis
+
 
 ```
 # Install Flex CLI.
@@ -13,11 +14,7 @@ flex configure
 
 # Run a command.
 flex run echo 'Hello, world!'
-```
 
-## Synopsis
-
-```
 # Upload a binary file and execute it.
 flex run -f path/to/some './some --flag1 --flag2'
 
