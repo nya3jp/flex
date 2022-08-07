@@ -81,6 +81,7 @@ func setUp(t *testing.T) {
 		"./cmd/flexhub",
 		"./cmd/flexlet",
 		"./cmd/testfs",
+		"./cmd/loadtest",
 	)
 	goCmd.Env = append(os.Environ(), "GOBIN="+binDir)
 	goCmd.Stdout = os.Stdout
@@ -206,34 +207,23 @@ func TestIntegration(t *testing.T) {
 	func() {
 		t.Log("******** Stress run test")
 
-		for i := 0; i < 3; i++ {
+		const flexlets = 1000
+		const jobs = 3000
+
+		for i := 0; i < flexlets; i++ {
 			f := startFlexlet(t)
 			defer f.Stop()
 		}
 
-		const msg = "ok"
-		const n = 30
-
-		var ids []string
-		for i := 0; i < n; i++ {
-			out, err := runCommand("flex", "job", "create", "echo", msg)
-			if err != nil {
-				t.Fatalf("flex job create: %v", err)
-			}
-			ids = append(ids, strings.TrimSpace(out))
-		}
-
-		for _, id := range ids {
-			if _, err := runCommand("flex", "job", "wait", id); err != nil {
-				t.Fatalf("flex job wait %s: %v", id, err)
-			}
-			out, err := runCommand("flex", "job", "outputs", id)
-			if err != nil {
-				t.Fatalf("flex job outputs %s: %v", id, err)
-			}
-			if got := strings.TrimSpace(out); got != msg {
-				t.Fatalf("flex job outputs %s: got %q, want %q", id, got, msg)
-			}
+		if _, err := runCommand(
+			"loadtest",
+			"--hub=http://localhost:57111/",
+			"--password=foobar",
+			fmt.Sprintf("--jobs=%d", jobs),
+			"sleep",
+			"1",
+		); err != nil {
+			t.Fatalf("loadtest failed: %v", err)
 		}
 	}()
 }
