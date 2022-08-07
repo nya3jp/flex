@@ -56,9 +56,9 @@ func (f *Text) JobStatus(jobStatus *flex.JobStatus) {
 		fmt.Fprintf(f.w, "Execution Time: %d\n", res.GetTime().AsDuration())
 		fmt.Fprintf(f.w, "Exit Code: %d\n", res.GetExitCode())
 	}
-	fmt.Fprintf(f.w, "Created Time: %s\n", jobStatus.GetCreated().String())
-	fmt.Fprintf(f.w, "Started Time: %s\n", jobStatus.GetStarted().String())
-	fmt.Fprintf(f.w, "Finished Time: %s\n", jobStatus.GetFinished().String())
+	fmt.Fprintf(f.w, "Created Time: %s\n", jobStatus.GetCreated().AsTime().String())
+	fmt.Fprintf(f.w, "Started Time: %s\n", jobStatus.GetStarted().AsTime().String())
+	fmt.Fprintf(f.w, "Finished Time: %s\n", jobStatus.GetFinished().AsTime().String())
 }
 
 func (f *Text) JobStatuses(jobStatuses []*flex.JobStatus) {
