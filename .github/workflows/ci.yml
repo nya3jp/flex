@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+    tags:
+      - v*.*.*
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
 
@@ -24,6 +28,21 @@ jobs:
     steps:
       - name: Check out
         uses: actions/checkout@v2
+      - name: Docker meta for flexhub
+        id: meta_flexhub
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/nya3jp/flexhub
+      - name: Docker meta for flexlet
+        id: meta_flexlet
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/nya3jp/flexlet
+      - name: Docker meta for flexbot
+        id: meta_flexbot
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/nya3jp/flexbot
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -38,30 +57,33 @@ jobs:
           FLEX_TEST_DB_PASS: flexpass
           FLEX_TEST_DB_NAME: flextest
       - name: Log in to ghcr.io
-        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ success() && github.event_name == 'push' }}
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push Flexhub Docker container
-        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ success() && github.event_name == 'push' }}
         uses: docker/build-push-action@v2
         with:
           file: docker/flexhub.Dockerfile
-          tags: ghcr.io/nya3jp/flexhub:latest
+          tags: ${{ steps.meta_flexhub.outputs.tags }}
+          labels: ${{ steps.meta_flexhub.outputs.labels }}
           push: true
       - name: Build and push Flexlet Docker container
-        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ success() && github.event_name == 'push' }}
         uses: docker/build-push-action@v2
         with:
           file: docker/flexlet.Dockerfile
-          tags: ghcr.io/nya3jp/flexlet:latest
+          tags: ${{ steps.meta_flexlet.outputs.tags }}
+          labels: ${{ steps.meta_flexlet.outputs.labels }}
           push: true
       - name: Build and push Flexbot Docker container
-        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ success() && github.event_name == 'push' }}
         uses: docker/build-push-action@v2
         with:
           file: docker/flexbot.Dockerfile
-          tags: ghcr.io/nya3jp/flexbot:latest
+          tags: ${{ steps.meta_flexbot.outputs.tags }}
+          labels: ${{ steps.meta_flexbot.outputs.labels }}
           push: true
