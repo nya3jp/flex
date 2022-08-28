@@ -18,17 +18,12 @@ function JobItem({job}: { job: Job }): React.ReactElement {
 }
 
 function TableRow({flexlet}: { flexlet: FlexletStatus }): React.ReactElement {
-  const badge =
-      flexlet.state === 'ONLINE' ?
-          <span className="badge bg-success">Online</span> :
-          <span className="badge bg-secondary">Offline</span>;
   const cores =
       flexlet.flexlet.spec.cores < 0 ?
           flexlet.currentJobs.length :
           flexlet.flexlet.spec.cores;
   return (
       <tr>
-        <td>{badge}</td>
         <td className="text-ellipsis">{flexlet.flexlet.name}</td>
         <td>
           {flexlet.currentJobs.length} / {cores}
@@ -49,14 +44,12 @@ function Table({flexlets}: { flexlets: FlexletStatus[] }): React.ReactElement {
         <table className="table table-sm table-striped flexlets"
                style={{tableLayout: 'fixed'}}>
           <colgroup>
-            <col style={{width: '6rem'}}/>
-            <col style={{width: '12rem'}}/>
+            <col style={{width: '28rem'}}/>
             <col style={{width: '4rem'}}/>
             <col/>
           </colgroup>
           <thead>
           <tr>
-            <th scope="col">State</th>
             <th scope="col">Name</th>
             <th scope="col">Cores</th>
             <th scope="col">Jobs</th>
@@ -76,8 +69,9 @@ export default function FlexletsPage() {
   const [flexlets, setFlexlets] = useState<FlexletStatus[] | undefined>(undefined);
   useEffect(() => {
     (async () => {
-      const flexlets = await client.listFlexlets();
-      setFlexlets(flexlets);
+      const all = await client.listFlexlets();
+      const onlines = all.filter((flexlet) => flexlet.state === 'ONLINE');
+      setFlexlets(onlines);
     })();
   }, [client, setFlexlets]);
 
