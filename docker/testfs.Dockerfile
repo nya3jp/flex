@@ -10,7 +10,7 @@ RUN go mod download
 COPY . ./
 RUN CGO_ENABLED=0 go install github.com/nya3jp/flex/cmd/testfs
 
-FROM debian:latest
+FROM ubuntu:latest
 
 WORKDIR /app
 COPY --from=builder /go/bin/testfs .

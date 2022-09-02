@@ -19,7 +19,7 @@ COPY js ./
 RUN cd client && npm install && npm run build
 RUN cd dashboard && npm install && npm run build
 
-FROM debian:latest
+FROM ubuntu:latest
 
 WORKDIR /app
 COPY --from=go /go/bin/flexhub .
